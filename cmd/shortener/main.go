@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"net/http"
-	"time"
 )
 
 // hand - Snippet for http handler declaration
@@ -58,17 +56,20 @@ func ShortenText(w http.ResponseWriter, r *http.Request) {
 
 // Все негативные кейсы- возвращаем 400 = http.StatusBadRequest
 func Expand(w http.ResponseWriter, r *http.Request) {
-	// Эндпоинт с методом GET и путём /{id}, где id — идентификатор сокращённого URL (например, /EwHXdJfB).
-	// В случае успешной обработки запроса сервер возвращает ответ с кодом 307 и оригинальным URL в HTTP-заголовке Location.
-	//
-	// Все негативные кейсы- возвращаем 400
-	fmt.Fprintf(w, "Hello World! %s", time.Now())
+	if r.Method != http.MethodGet {
+		http.Error(w, "accepts GET requests!", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	http.Redirect(w, r, "https://google.com", http.StatusTemporaryRedirect)
+	// fmt.Fprintf(w, "www.google.com %s", time.Now())
 }
 
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /", ShortenText)
-	mux.HandleFunc("GET /EwHXdJfB", Expand)
+	mux.HandleFunc("GET /{id}", Expand)
 
 	// Вторым параметром ListenAndServe получает:
 	// mux (маршрутизатор= роутер= multiplexer) или
