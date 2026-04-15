@@ -3,9 +3,14 @@ package main
 import (
 	"io"
 	"net/http"
+	"strings"
+	"time"
 )
 
 // hand - Snippet for http handler declaration
+
+// Хранилище!
+var repo map[string]string
 
 // Все негативные кейсы- возвращаем 400 = http.StatusBadRequest
 func ShortenText(w http.ResponseWriter, r *http.Request) {
@@ -35,6 +40,11 @@ func ShortenText(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Действия слоя сервисов
+	s := time.Now().String() // Рандомная строка- время!
+	id := strings.ReplaceAll(s, " ", "")
+	repo[id] = string(body)
+
 	// 4. Формируем "Ответ-Обещание" (Response)
 	// Сначала настраиваем "ящик" (ResponseWriter) в который будет положен respondēre- вердикт и ответ мудреца
 	w.Header().Set("Content-Type", "text/plain")
@@ -51,22 +61,27 @@ func ShortenText(w http.ResponseWriter, r *http.Request) {
 	// заголовок Content-Length добавляется автоматически.
 	//
 	// Пишем (Write) в то, во что "можно писать" (...Writer)
-	w.Write([]byte("http://localhost:8080/EwHXdJfB"))
+	w.Write([]byte("http://localhost:8080/" + id))
 }
 
 // Все негативные кейсы- возвращаем 400 = http.StatusBadRequest
 func Expand(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
 	if r.Method != http.MethodGet {
 		http.Error(w, "accepts GET requests!", http.StatusBadRequest)
 		return
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
-	http.Redirect(w, r, "https://google.com", http.StatusTemporaryRedirect)
+	http.Redirect(w, r, repo[id], http.StatusTemporaryRedirect)
 	// fmt.Fprintf(w, "www.google.com %s", time.Now())
 }
 
 func main() {
+
+	repo = make(map[string]string)
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /", ShortenText)
 	mux.HandleFunc("GET /{id}", Expand)
