@@ -9,22 +9,22 @@ import (
 
 func TestShortenText(t *testing.T) {
 	// 🔸Arrange
-	// Инициализируем хранилище (так как оно глобальное)
+	// Только инициализируем хранилище (так как оно глобальное для нашего main)
 	repo = make(map[string]string)
 
-	// Создаем тело запроса
+	// Создаем тело запроса (body это всегда "поток"- Reader, то что "можно читать")
 	url := "https://google.com"
-	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(url))
+	r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(url))
 
 	// Создаем ResponseRecorder (замена реальному http.ResponseWriter)
-	rr := httptest.NewRecorder()
+	w := httptest.NewRecorder()
 
 	// Вызываем хендлер
-	ShortenText(rr, req)
+	ShortenText(w, r)
 
 	// Проверяем статус код
-	if rr.Code != http.StatusCreated {
-		t.Errorf("expected status 201, got %d", rr.Code)
+	if w.Code != http.StatusCreated {
+		t.Errorf("expected status 201, got %d", w.Code)
 	}
 
 	// Проверяем, что в repo что-то появилось
@@ -34,21 +34,23 @@ func TestShortenText(t *testing.T) {
 }
 
 func TestExpand(t *testing.T) {
-	repo = map[string]string{"test-id": "https://yandex.ru"}
+	repo = map[string]string{"test-id": "https://google.com"}
 
-	req := httptest.NewRequest(http.MethodGet, "/test-id", nil)
-	// Эмулируем параметры пути для Go 1.22+
-	req.SetPathValue("id", "test-id")
+	// При GET-запросе ничего не отправляем в теле, передаем nil
+	r := httptest.NewRequest(http.MethodGet, "/test-id", nil)
+	// Эмулируем параметры пути для Go 1.22+,
+	// chi с v5.0.12+ вроде тоже такую работу поддерживает
+	r.SetPathValue("id", "test-id")
 
-	rr := httptest.NewRecorder()
-	Expand(rr, req)
+	w := httptest.NewRecorder()
+	Expand(w, r)
 
-	if rr.Code != http.StatusTemporaryRedirect {
-		t.Errorf("expected 307, got %d", rr.Code)
+	if w.Code != http.StatusTemporaryRedirect {
+		t.Errorf("expected 307, got %d", w.Code)
 	}
 
-	location := rr.Header().Get("Location")
-	if location != "https://yandex.ru" {
-		t.Errorf("expected redirect to yandex, got %s", location)
+	location := w.Header().Get("Location")
+	if location != "https://google.com" {
+		t.Errorf("expected redirect to google, got %s", location)
 	}
 }
