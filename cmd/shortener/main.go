@@ -1,7 +1,10 @@
 package main
 
 import (
+	"drk-url-shortener/internal/config"
+	"flag"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -13,6 +16,8 @@ import (
 
 // 1️⃣repository
 var repo map[string]string
+
+var cfg config.Config
 
 // Все негативные кейсы- возвращаем 400 = http.StatusBadRequest
 func ShortenText(w http.ResponseWriter, r *http.Request) {
@@ -63,11 +68,15 @@ func ShortenText(w http.ResponseWriter, r *http.Request) {
 	// заголовок Content-Length добавляется автоматически.
 	//
 	// Пишем (Write) в то, во что "можно писать" (...Writer)
-	w.Write([]byte("http://localhost:8080/" + id))
+	w.Write([]byte(cfg.BaseURL + id))
 }
 
 // Все негативные кейсы- возвращаем 400 = http.StatusBadRequest
 func Expand(w http.ResponseWriter, r *http.Request) {
+	// // Ниже- родной для chi метод определения id
+	// // Но с ним не работают простые (и универсальные) тесты
+	// id := chi.URLParam(r, "id")
+	// Стандартный для встроенного роутера, должен поддерживаться chi в 2026
 	id := r.PathValue("id")
 
 	if r.Method != http.MethodGet {
@@ -81,17 +90,25 @@ func Expand(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	flag.StringVar(&cfg.ServAddres, "a", ":8080", "HTTP server startup address")
+	flag.StringVar(&cfg.BaseURL, "b", "http://localhost:8080/", "base URL")
+	flag.Parse()
+
 	// Будущая цепочка repository -> service -> handler
 	repo = make(map[string]string)
 
 	// 3️⃣handler
-	// mux := http.NewServeMux()
 	mux := chi.NewRouter()
-	mux.HandleFunc("POST /", ShortenText)
-	mux.HandleFunc("GET /{id}", Expand)
+	mux.Post("/", ShortenText)
+	mux.Get("/{id}", Expand)
 
 	// Вторым параметром ListenAndServe получает:
 	// mux (маршрутизатор= роутер= multiplexer) или
 	// nil (используется маршрутизатор http.DefaultServeMux).
-	http.ListenAndServe(":8080", mux)
+	// http.ListenAndServe(":8080", mux)
+
+	err := http.ListenAndServe(cfg.ServAddres, mux)
+	if err != nil {
+		log.Fatalf("Start error: %s", err)
+	}
 }
