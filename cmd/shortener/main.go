@@ -5,11 +5,13 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // hand - Snippet for http handler declaration
 
-// Хранилище!
+// 1️⃣repository
 var repo map[string]string
 
 // Все негативные кейсы- возвращаем 400 = http.StatusBadRequest
@@ -40,7 +42,7 @@ func ShortenText(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Действия слоя сервисов
+	// 2️⃣service
 	s := time.Now().String() // Рандомная строка- время!
 	id := strings.ReplaceAll(s, " ", "")
 	repo[id] = string(body)
@@ -79,10 +81,12 @@ func Expand(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-
+	// Будущая цепочка repository -> service -> handler
 	repo = make(map[string]string)
 
-	mux := http.NewServeMux()
+	// 3️⃣handler
+	// mux := http.NewServeMux()
+	mux := chi.NewRouter()
 	mux.HandleFunc("POST /", ShortenText)
 	mux.HandleFunc("GET /{id}", Expand)
 
