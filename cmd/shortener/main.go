@@ -1,13 +1,18 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // hand - Snippet for http handler declaration
+
+// 1️⃣repository
+var repo map[string]string
 
 // Все негативные кейсы- возвращаем 400 = http.StatusBadRequest
 func ShortenText(w http.ResponseWriter, r *http.Request) {
@@ -37,6 +42,11 @@ func ShortenText(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 2️⃣service
+	s := time.Now().String() // Рандомная строка- время!
+	id := strings.ReplaceAll(s, " ", "")
+	repo[id] = string(body)
+
 	// 4. Формируем "Ответ-Обещание" (Response)
 	// Сначала настраиваем "ящик" (ResponseWriter) в который будет положен respondēre- вердикт и ответ мудреца
 	w.Header().Set("Content-Type", "text/plain")
@@ -53,22 +63,32 @@ func ShortenText(w http.ResponseWriter, r *http.Request) {
 	// заголовок Content-Length добавляется автоматически.
 	//
 	// Пишем (Write) в то, во что "можно писать" (...Writer)
-	w.Write([]byte("http://localhost:8080/EwHXdJfB"))
+	w.Write([]byte("http://localhost:8080/" + id))
 }
 
 // Все негативные кейсы- возвращаем 400 = http.StatusBadRequest
 func Expand(w http.ResponseWriter, r *http.Request) {
-	// Эндпоинт с методом GET и путём /{id}, где id — идентификатор сокращённого URL (например, /EwHXdJfB).
-	// В случае успешной обработки запроса сервер возвращает ответ с кодом 307 и оригинальным URL в HTTP-заголовке Location.
-	//
-	// Все негативные кейсы- возвращаем 400
-	fmt.Fprintf(w, "Hello World! %s", time.Now())
+	id := r.PathValue("id")
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "accepts GET requests!", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	http.Redirect(w, r, repo[id], http.StatusTemporaryRedirect)
+	// fmt.Fprintf(w, "www.google.com %s", time.Now())
 }
 
 func main() {
-	mux := http.NewServeMux()
+	// Будущая цепочка repository -> service -> handler
+	repo = make(map[string]string)
+
+	// 3️⃣handler
+	// mux := http.NewServeMux()
+	mux := chi.NewRouter()
 	mux.HandleFunc("POST /", ShortenText)
-	mux.HandleFunc("GET /EwHXdJfB", Expand)
+	mux.HandleFunc("GET /{id}", Expand)
 
 	// Вторым параметром ListenAndServe получает:
 	// mux (маршрутизатор= роутер= multiplexer) или
