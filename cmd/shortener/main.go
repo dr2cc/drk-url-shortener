@@ -2,17 +2,19 @@ package main
 
 import (
 	"drk-url-shortener/internal/config"
+	"drk-url-shortener/internal/lib/random"
 	"flag"
 	"io"
 	"log"
 	"net/http"
-	"strings"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 )
 
 // hand - Snippet for http handler declaration
+
+// TODO: move to config
+const aliasLength = 6
 
 // 1️⃣repository
 var repo map[string]string
@@ -48,9 +50,9 @@ func ShortenText(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2️⃣service
-	s := time.Now().String() // Рандомная строка- время!
-	id := strings.ReplaceAll(s, " ", "")
-	repo[id] = string(body)
+	alias := random.NewRandomString(aliasLength)
+	// Запись в db
+	repo[alias] = string(body)
 
 	// 4. Формируем "Ответ-Обещание" (Response)
 	// Сначала настраиваем "ящик" (ResponseWriter) в который будет положен respondēre- вердикт и ответ мудреца
@@ -68,7 +70,7 @@ func ShortenText(w http.ResponseWriter, r *http.Request) {
 	// заголовок Content-Length добавляется автоматически.
 	//
 	// Пишем (Write) в то, во что "можно писать" (...Writer)
-	w.Write([]byte(cfg.BaseURL + id))
+	w.Write([]byte(cfg.BaseURL + "/" + alias))
 }
 
 // Все негативные кейсы- возвращаем 400 = http.StatusBadRequest
