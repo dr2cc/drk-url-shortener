@@ -93,7 +93,7 @@ func Expand(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	flag.StringVar(&cfg.ServAddres, "a", ":8080", "HTTP server startup address")
-	flag.StringVar(&cfg.BaseURL, "b", "http://localhost:8080/", "base URL")
+	flag.StringVar(&cfg.BaseURL, "b", "http://localhost:8080", "base URL")
 	flag.Parse()
 
 	// Будущая цепочка repository -> service -> handler

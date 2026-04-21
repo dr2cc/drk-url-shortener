@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Работает (как и положено серьезной программе) только с bash
 func TestNewRandomString(t *testing.T) {
 	tests := []struct {
 		name string
