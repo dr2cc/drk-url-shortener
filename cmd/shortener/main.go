@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/caarlos0/env/v11"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -95,6 +96,10 @@ func main() {
 	flag.StringVar(&cfg.ServAddres, "a", ":8080", "HTTP server startup address")
 	flag.StringVar(&cfg.BaseURL, "b", "http://localhost:8080", "base URL")
 	flag.Parse()
+
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatalf("Config parsing error: %+v\n", err)
+	}
 
 	// Будущая цепочка repository -> service -> handler
 	repo = make(map[string]string)
