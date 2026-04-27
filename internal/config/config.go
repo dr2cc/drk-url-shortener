@@ -12,7 +12,7 @@ type Config struct {
 	BaseURL    string `env:"BASE_URL"`
 }
 
-func New() *Config {
+func New() Config {
 	cfg := &Config{}
 	// Разбираем флаги в конфигурацию
 	flag.StringVar(&cfg.ServAddres, "a", ":8080", "HTTP server startup address")
@@ -30,5 +30,5 @@ func New() *Config {
 		log.Fatalf("Config parsing error: %+v\n", err)
 	}
 
-	return cfg
+	return *cfg
 }

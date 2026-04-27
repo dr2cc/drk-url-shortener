@@ -18,7 +18,7 @@ const aliasLength = 6
 // 1️⃣repository
 var repo map[string]string
 
-var cfg *config.Config
+var cfg config.Config
 
 // Все негативные кейсы- возвращаем 400 = http.StatusBadRequest
 func ShortenText(w http.ResponseWriter, r *http.Request) {
