@@ -3,12 +3,10 @@ package main
 import (
 	"drk-url-shortener/internal/config"
 	"drk-url-shortener/internal/lib/random"
-	"flag"
 	"io"
 	"log"
 	"net/http"
 
-	"github.com/caarlos0/env/v11"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -20,7 +18,7 @@ const aliasLength = 6
 // 1️⃣repository
 var repo map[string]string
 
-var cfg config.Config
+var cfg *config.Config
 
 // Все негативные кейсы- возвращаем 400 = http.StatusBadRequest
 func ShortenText(w http.ResponseWriter, r *http.Request) {
@@ -93,13 +91,7 @@ func Expand(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	flag.StringVar(&cfg.ServAddres, "a", ":8080", "HTTP server startup address")
-	flag.StringVar(&cfg.BaseURL, "b", "http://localhost:8080", "base URL")
-	flag.Parse()
-
-	if err := env.Parse(&cfg); err != nil {
-		log.Fatalf("Config parsing error: %+v\n", err)
-	}
+	cfg = config.New()
 
 	// Будущая цепочка repository -> service -> handler
 	repo = make(map[string]string)
