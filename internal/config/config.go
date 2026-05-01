@@ -7,6 +7,8 @@ import (
 	"github.com/caarlos0/env/v11"
 )
 
+const AliasLength = 6
+
 type Config struct {
 	ServAddres string `env:"SERVER_ADDRESS"`
 	BaseURL    string `env:"BASE_URL"`
