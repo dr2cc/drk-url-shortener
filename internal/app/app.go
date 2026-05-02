@@ -6,10 +6,9 @@ import (
 	"drk-url-shortener/internal/lib/logger/sl"
 	"log/slog"
 	"net/http"
-	"os"
 )
 
-func Run(cfg config.Config) {
+func Run(cfg config.Config) error {
 	log := sl.SetupLogger(cfg.Env)
 	slog.SetDefault(log)
 	log.Info("starting application", slog.String("env", cfg.Env))
@@ -29,9 +28,8 @@ func Run(cfg config.Config) {
 	log.Info("server is starting", "port", cfg.ServAddres)
 	err := http.ListenAndServe(cfg.ServAddres, mux)
 	if err != nil {
-		// log.Fatalf("Start error: %s", err)
-		// slog аналог для log.Fatal(err)
 		log.Error("start error:", "err", err)
-		os.Exit(1)
+		return err
 	}
+	return nil
 }
