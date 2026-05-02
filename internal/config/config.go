@@ -10,6 +10,8 @@ import (
 const AliasLength = 6
 
 type Config struct {
+	// Когда проект работает на реальном сервере (в продакшене) `env:"ENV" envDefault:"prod"`
+	Env        string `env:"ENV" envDefault:"local"`
 	ServAddres string `env:"SERVER_ADDRESS"`
 	BaseURL    string `env:"BASE_URL"`
 }
