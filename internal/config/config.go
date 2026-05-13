@@ -7,8 +7,6 @@ import (
 	"github.com/caarlos0/env/v11"
 )
 
-const AliasLength = 6
-
 type Config struct {
 	// Когда проект работает на реальном сервере (в продакшене) `env:"ENV" envDefault:"prod"`
 	Env        string `env:"ENV" envDefault:"local"`

@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+const aliasLength = 6
+
 // Все негативные кейсы- возвращаем 400 = http.StatusBadRequest
 func shortenText(repo map[string]string, cfg config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +39,7 @@ func shortenText(repo map[string]string, cfg config.Config) http.HandlerFunc {
 		}
 
 		// 2️⃣service
-		alias := random.NewRandomString(config.AliasLength)
+		alias := random.NewRandomString(aliasLength)
 		// Запись в db
 		repo[alias] = string(body)
 
