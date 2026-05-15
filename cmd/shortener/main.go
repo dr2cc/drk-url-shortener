@@ -9,6 +9,8 @@ import (
 )
 
 func main() {
+	// Stabilization Stage (Production-Ready MVP)
+	// 3. Инфраструктурный слой- конфигурация.
 	cfg, err := config.New()
 	if err != nil {
 		log.Fatalf("Config error: %s", err)
@@ -16,7 +18,7 @@ func main() {
 
 	// Run
 	if err := app.Run(cfg); err != nil {
-		// Такая сложная обработка ошибки
+		// Более сложная обработка ошибки
 		// для дальнейшего внедрения graceful shutdown
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)

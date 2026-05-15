@@ -38,9 +38,11 @@ func shortenText(repo map[string]string, cfg config.Config) http.HandlerFunc {
 			return
 		}
 
-		// 2️⃣service
+		// ❌Stabilization Stage (Production-Ready MVP)
+		// 1. Выделение слоев (Чистая архитектура)
+		// Выделить в service
 		alias := random.NewRandomString(aliasLength)
-		// Запись в db
+		// Выделить в repository
 		repo[alias] = string(body)
 
 		// 4. Формируем "Ответ-Обещание" (Response)

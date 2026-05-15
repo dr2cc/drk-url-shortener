@@ -18,6 +18,13 @@ func redirect(repo map[string]string) http.HandlerFunc {
 			return
 		}
 
+		// --- ДОБАВЛЯЕМ ПРОВЕРКУ НАЛИЧИЯ КЛЮЧА ---
+		_, exists := repo[id]
+		if !exists {
+			http.Error(w, "URL not found", http.StatusBadRequest)
+			return
+		}
+
 		w.Header().Set("Content-Type", "text/plain")
 		http.Redirect(w, r, repo[id], http.StatusTemporaryRedirect)
 		// fmt.Fprintf(w, "www.google.com %s", time.Now())

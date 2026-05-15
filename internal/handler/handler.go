@@ -8,7 +8,8 @@ import (
 	slogchi "github.com/samber/slog-chi"
 )
 
-// hand - Snippet for http handler declaration
+// ❌Stabilization Stage (Production-Ready MVP)
+// 2. Переход на интерфейсы (Inversion of Control).
 
 func New(repo map[string]string, cfg config.Config, log *slog.Logger) *chi.Mux {
 	// 3️⃣handler
