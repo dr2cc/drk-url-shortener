@@ -1,13 +1,32 @@
 package main
 
 import (
-	"fmt"
+	"drk-url-shortener/internal/config"
+	"drk-url-shortener/internal/lib/random"
+	"flag"
 	"io"
+	"log"
 	"net/http"
-	"time"
+
+	"github.com/go-chi/chi/v5"
 )
 
-// hand - Snippet for http handler declaration
+const aliasLength = 6
+
+// Эта ветка- архитектурный тупик.
+// Глобальные переменные (repo и cfg) это фундаментальная проблема.
+// Такой код называют «нетестируемым» (untestable code) в долгосрочной перспективе.
+
+// Но это вовсе и не плохо, а так было мной задумано!
+// И оказалось, что это типичный MVP (минимально жизнеспособный продукт) или прототип.
+// Задача прототипа — проверить, что Go в принципе может урезать ссылку, сохранить её и вернуть ответ.
+// Для этой задачи достаточно одного «счастливого пути» (Happy Path).
+// Проверка граничных условий (пустой body, не тот метод) на этапе прототипа избыточна,
+// так как само приложение еще будет кардинально меняться (и я это понимал, когда писал его).
+
+var repo map[string]string
+
+var cfg config.Config
 
 // Все негативные кейсы- возвращаем 400 = http.StatusBadRequest
 func ShortenText(w http.ResponseWriter, r *http.Request) {
@@ -37,6 +56,11 @@ func ShortenText(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 2️⃣service
+	alias := random.NewRandomString(aliasLength)
+	// Запись в db
+	repo[alias] = string(body)
+
 	// 4. Формируем "Ответ-Обещание" (Response)
 	// Сначала настраиваем "ящик" (ResponseWriter) в который будет положен respondēre- вердикт и ответ мудреца
 	w.Header().Set("Content-Type", "text/plain")
@@ -44,34 +68,48 @@ func ShortenText(w http.ResponseWriter, r *http.Request) {
 	// Объявляем вердикт : "Создано" (201)
 	w.WriteHeader(http.StatusCreated)
 
-	// Из описаеия:
-	// Функция Write записывает данные в соединение (to the connection) в HTTP-ответе.
-	// Если метод ResponseWriter.WriteHeader еще не был вызван, Write вызывает WriteHeader(http.StatusOK) перед записью данных.
-	// Если заголовок не содержит строку Content-Type (к примеру "w.Header().Set("Content-Type", "text/plain")"),
-	// Write (при помощи DetectContentType) устанавливает Content-Type, по результату анализа начальных 512 байт возвращаемых данных.
-	// Кроме того, если общий размер всех записанных данных составляет менее нескольких КБ и нет вызовов Flush,
-	// заголовок Content-Length добавляется автоматически.
-	//
 	// Пишем (Write) в то, во что "можно писать" (...Writer)
-	w.Write([]byte("http://localhost:8080/EwHXdJfB"))
+	w.Write([]byte(cfg.BaseURL + "/" + alias))
 }
 
 // Все негативные кейсы- возвращаем 400 = http.StatusBadRequest
 func Expand(w http.ResponseWriter, r *http.Request) {
-	// Эндпоинт с методом GET и путём /{id}, где id — идентификатор сокращённого URL (например, /EwHXdJfB).
-	// В случае успешной обработки запроса сервер возвращает ответ с кодом 307 и оригинальным URL в HTTP-заголовке Location.
-	//
-	// Все негативные кейсы- возвращаем 400
-	fmt.Fprintf(w, "Hello World! %s", time.Now())
+	// // Ниже- родной для chi метод определения id
+	// // Но с ним не работают простые (и универсальные) тесты
+	// id := chi.URLParam(r, "id")
+	// Стандартный для встроенного роутера, должен поддерживаться chi в 2026
+	id := r.PathValue("id")
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "accepts GET requests!", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	http.Redirect(w, r, repo[id], http.StatusTemporaryRedirect)
+	// fmt.Fprintf(w, "www.google.com %s", time.Now())
 }
 
 func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /", ShortenText)
-	mux.HandleFunc("GET /EwHXdJfB", Expand)
+	flag.StringVar(&cfg.ServAddres, "a", ":8080", "HTTP server startup address")
+	flag.StringVar(&cfg.BaseURL, "b", "http://localhost:8080", "base URL")
+	flag.Parse()
+
+	// Будущая цепочка repository -> service -> handler
+	repo = make(map[string]string)
+
+	// 3️⃣handler
+	mux := chi.NewRouter()
+	mux.Post("/", ShortenText)
+	mux.Get("/{id}", Expand)
 
 	// Вторым параметром ListenAndServe получает:
 	// mux (маршрутизатор= роутер= multiplexer) или
 	// nil (используется маршрутизатор http.DefaultServeMux).
-	http.ListenAndServe(":8080", mux)
+	// http.ListenAndServe(":8080", mux)
+
+	err := http.ListenAndServe(cfg.ServAddres, mux)
+	if err != nil {
+		log.Fatalf("Start error: %s", err)
+	}
 }
