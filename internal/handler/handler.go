@@ -2,11 +2,22 @@ package handler
 
 import (
 	"drk-url-shortener/internal/config"
+	"drk-url-shortener/internal/service"
 	"log/slog"
 
 	"github.com/go-chi/chi/v5"
 	slogchi "github.com/samber/slog-chi"
 )
+
+// // URLSaverGetter описывает только то, что нужно хэндлерам
+// type URLSaverGetter interface {
+// 	SaveURL(alias string, url string) error
+// 	GetURL(alias string) (string, error)
+// }
+
+type Handler struct {
+	service *service.Service
+}
 
 // ❌Stabilization Stage (Production-Ready MVP)
 // 2. Переход на интерфейсы (Inversion of Control).

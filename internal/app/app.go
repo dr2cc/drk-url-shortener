@@ -4,6 +4,8 @@ import (
 	"drk-url-shortener/internal/config"
 	"drk-url-shortener/internal/handler"
 	"drk-url-shortener/internal/lib/logger/sl"
+	"drk-url-shortener/internal/repository"
+	"drk-url-shortener/internal/service"
 	"log/slog"
 	"net/http"
 )
@@ -24,17 +26,21 @@ func Run(cfg config.Config) error {
 	// ❌Stabilization Stage (Production-Ready MVP)
 	// 3. Инфраструктурный слой- db
 	// Будет осуществлено в iter9 (сохранение сокращенных URL в файл при выходе и загрузка из него при запуске)) и затем в iter10 (pg)
-	repo := make(map[string]string)
+	// 1️⃣repository
+	// repo := make(map[string]string)
+	repos := repository.New(make(map[string]string))
+	// 2️⃣service
+	services := service.New(repos)
 
 	// 3️⃣handler
-	mux := handler.New(repo, cfg, log)
+	handlers := handler.New(services, cfg, log)
 
 	// ❌Stabilization Stage (Production-Ready MVP)
 	// 5. Полноценная обработка контекста (context.Context)
 	// Все сетевые запросы, походы в базу данных и логирование начнут использовать r.Context().
 	// Это необходимо для graceful shutdown и для отмены долгих операций, если клиент разорвал соединение.
 	log.Info("server is starting", "port", cfg.ServAddres)
-	err := http.ListenAndServe(cfg.ServAddres, mux)
+	err := http.ListenAndServe(cfg.ServAddres, handlers)
 	if err != nil {
 		log.Error("start error:", "err", err)
 		return err
