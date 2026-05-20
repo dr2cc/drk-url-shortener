@@ -10,7 +10,7 @@ import (
 
 func main() {
 	// Stabilization Stage (Production-Ready MVP)
-	// 3. Инфраструктурный слой- конфигурация.
+	// 3️⃣Инфраструктурный слой- конфигурация.
 	cfg, err := config.New()
 	if err != nil {
 		log.Fatalf("Config error: %s", err)

@@ -11,32 +11,27 @@ import (
 )
 
 func Run(cfg config.Config) error {
-	// Stabilization Stage (Production-Ready MVP)
-	// 4. Наблюдаемость (Observability).
+	// 📌Stabilization Stage (Production-Ready MVP)
+	// 4️⃣ Наблюдаемость (Observability).
 	// Логер добавден.
 	// Еще следует добавить:
 	// Трейсинг: Внедрение OpenTelemetry (Jaeger) для отслеживания пути запроса, особенно когда проект начнет ходить в базу данных.
-	// (здесь это отдельный трек) Метрики: Интеграция с Prometheus для отслеживания количества запросов (RPS), времени ответа (latency) и количества ошибок 4xx / 5xx.
+	// (в yp это отдельный трек) Метрики: Интеграция с Prometheus для отслеживания количества запросов (RPS), времени ответа (latency) и количества ошибок 4xx / 5xx.
 	log := sl.SetupLogger(cfg.Env)
 	slog.SetDefault(log)
 	log.Info("starting application", slog.String("env", cfg.Env))
 
-	// Будущая цепочка repository -> service -> handler
-
-	// ❌Stabilization Stage (Production-Ready MVP)
-	// 3. Инфраструктурный слой- db
+	// 📌Stabilization Stage (Production-Ready MVP)
+	// 3️⃣ Инфраструктурный слой- db
 	// Будет осуществлено в iter9 (сохранение сокращенных URL в файл при выходе и загрузка из него при запуске)) и затем в iter10 (pg)
-	// 1️⃣repository
-	// repo := make(map[string]string)
-	repos := repository.New(make(map[string]string))
-	// 2️⃣service
-	services := service.New(repos)
 
-	// 3️⃣handler
+	// DI
+	repos := repository.New(make(map[string]string))
+	services := service.New(repos)
 	handlers := handler.New(services, cfg, log)
 
-	// ❌Stabilization Stage (Production-Ready MVP)
-	// 5. Полноценная обработка контекста (context.Context)
+	// 📍(сюда вернуться) Stabilization Stage (Production-Ready MVP)
+	// 5️⃣ Полноценная обработка контекста (context.Context)
 	// Все сетевые запросы, походы в базу данных и логирование начнут использовать r.Context().
 	// Это необходимо для graceful shutdown и для отмены долгих операций, если клиент разорвал соединение.
 	log.Info("server is starting", "port", cfg.ServAddres)

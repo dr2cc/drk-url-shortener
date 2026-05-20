@@ -22,12 +22,12 @@ type Handler struct {
 // ❌Stabilization Stage (Production-Ready MVP)
 // 2. Переход на интерфейсы (Inversion of Control).
 
-func New(repo map[string]string, cfg config.Config, log *slog.Logger) *chi.Mux {
+func New(service *service.Service, cfg config.Config, log *slog.Logger) *chi.Mux {
 	// 3️⃣handler
 	r := chi.NewRouter()
 	// Мы передаем настроенный logger внутрь middleware slog-chi
 	r.Use(slogchi.New(log))
-	r.Post("/", shortenText(repo, cfg))
-	r.Get("/{id}", redirect(repo))
+	r.Post("/", shortenText(service, cfg, log))
+	r.Get("/{id}", redirect(service, log))
 	return r
 }

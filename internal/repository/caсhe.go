@@ -5,7 +5,10 @@ type Cache struct {
 }
 
 func NewCache(repo map[string]string) Cache {
-	// Возвращай структуры!
+	// «Accept interfaces, 🔙return structs».
+	// Возвращай структуры: "Создатель" объекта знает о нем всё,
+	// поэтому возвращает конкретный тип (тут Cache struct).
+	// Это дает вызывающему коду гибкость — он сам решит, в какой интерфейс «обернуть» результат.
 	return Cache{
 		db: repo,
 	}

@@ -11,8 +11,10 @@ type Repository struct {
 }
 
 func New(repo map[string]string) *Repository {
-	// make(map[string]string)
 	return &Repository{
+		// «Accept interfaces🔜, return structs».
+		// Принимай интерфейсы (тут URLSaverGetter interface):
+		// Функция должна требовать только то поведение, которое ей реально нужно!
 		URLSaverGetter: NewCache(repo),
 	}
 }
