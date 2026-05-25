@@ -9,8 +9,17 @@ import (
 const slugLength = 6
 
 // ShortenerUseCase -.
+// Здесь нужно использовать именованные поля (композиция или явное делегирование).
+// Почему:
+// Здесь мы возвращаем структуру Shortener, как обект имплементирующий ShortURL interface.
+// Мы обязаны явно указать для Shortener все методы ShortURL interface
+//
+// Суть repo это DI, встраивание repo как зависимости в сервис.
+// Мы не «встраиваете» её в терминах языка (как embedding), а именно передаем (внедряеи) извне как зависимость.
+// Поле repo здесь выступает в роли «приёмника» этой зависимости.
 type Shortener struct {
-	// Доступ к методам интерфейса происходит строго через имя этого поля (s.repo.Save())
+	// «Accept interfaces (ShortURLRepo)🔜,
+	// Доступ к методам интерфейса будет происходить строго через имя этого поля (s.repo.Save())
 	repo ShortURLRepo
 }
 
@@ -18,7 +27,6 @@ type Shortener struct {
 // Передаем интерфейс ShortURLRepo вместо *указателя на репозиторий
 func New(repo ShortURLRepo) *Shortener {
 	// 🔙return structs»
-	// DI. Суть- встраиваем repo (как зависимость?) в сервис
 	return &Shortener{
 		repo: repo,
 	}

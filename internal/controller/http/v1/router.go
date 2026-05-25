@@ -9,13 +9,13 @@ import (
 	slogchi "github.com/samber/slog-chi"
 )
 
-// ❌Stabilization Stage (Production-Ready MVP)
+// Stabilization Stage (Production-Ready MVP)
 // 2. Переход на интерфейсы (Inversion of Control).
 
 // Описываем структуру роутера для v1.
 // Она инкапсулирует в себя зависимости, необходимые всем хэндлерам.
 type router struct {
-	shortener usecase.Shortener // Переходим на ИНТЕРФЕЙС вместо конкретной структуры
+	shortener *usecase.Shortener // Переходим на interface вместо конкретной структуры
 	cfg       config.Config
 	log       *slog.Logger
 }
