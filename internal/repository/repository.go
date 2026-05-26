@@ -20,9 +20,9 @@ type Repository struct {
 	// имя которого совпадает с именем самого типа (в данном случае ShortURLRepo).
 }
 
-func New(repo map[string]string) *Repository {
+func New() *Repository {
 	// 🔙return structs».
 	return &Repository{
-		ShortURLRepo: NewCache(repo),
+		ShortURLRepo: NewCache(),
 	}
 }

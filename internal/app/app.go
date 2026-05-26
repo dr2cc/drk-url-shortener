@@ -32,7 +32,7 @@ func Run(cfg config.Config) error {
 	r := chi.NewRouter()
 
 	// DI
-	repos := repository.New(make(map[string]string))
+	repos := repository.New()
 	// ⬇ Сервисам нужно то, что делает репозиторий (сохранение и нахождение).
 	// 22.05.26 Продолжить от сюда https://share.google/aimode/ixhlMNK4DoCFiNBij
 	services := usecase.New(repos)
