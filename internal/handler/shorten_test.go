@@ -1,29 +1,24 @@
 package handler
 
 import (
-	"drk-url-shortener/internal/config"
 	"net/http"
-	"reflect"
 	"testing"
 )
 
-func Test_shortenText(t *testing.T) {
-	type args struct {
-		repo map[string]string
-		cfg  config.Config
-	}
+func Test_server_shortenText(t *testing.T) {
 	tests := []struct {
-		name string
-		args args
-		want http.HandlerFunc
+		name string // description of this test case
+		// Named input parameters for target function.
+		w http.ResponseWriter
+		r *http.Request
 	}{
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := shortenText(tt.args.repo, tt.args.cfg); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("shortenText() = %v, want %v", got, tt.want)
-			}
+			// TODO: construct the receiver type.
+			var s server
+			s.shortenText(tt.w, tt.r)
 		})
 	}
 }

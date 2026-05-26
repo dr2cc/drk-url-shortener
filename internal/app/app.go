@@ -3,20 +3,14 @@ package app
 import (
 	"drk-url-shortener/internal/config"
 	"drk-url-shortener/internal/handler"
+	"drk-url-shortener/internal/repository"
 	"log"
 	"net/http"
 )
 
-// 1️⃣repository
-// var repo map[string]string
-
-// var cfg config.Config
-
 func Run(cfg config.Config) {
-	// Будущая цепочка repository -> service -> handler
-
 	// 1️⃣repository
-	repo := make(map[string]string)
+	repo := repository.New()
 
 	// 3️⃣handler
 	mux := handler.New(repo, cfg)

@@ -1,25 +1,25 @@
 package handler
 
 import (
+	"drk-url-shortener/internal/repository"
 	"net/http"
-	"reflect"
 	"testing"
 )
 
 func Test_redirect(t *testing.T) {
-	type args struct {
-		repo map[string]string
-	}
 	tests := []struct {
-		name string
-		args args
+		name string // description of this test case
+		// Named input parameters for target function.
+		repo repository.Storage
 		want http.HandlerFunc
 	}{
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := redirect(tt.args.repo); !reflect.DeepEqual(got, tt.want) {
+			got := redirect(tt.repo)
+			// TODO: update the condition below to compare got with tt.want.
+			if true {
 				t.Errorf("redirect() = %v, want %v", got, tt.want)
 			}
 		})
