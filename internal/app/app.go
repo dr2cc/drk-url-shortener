@@ -34,7 +34,7 @@ func Run(cfg config.Config) error {
 	// DI
 	repos := repository.New()
 	// ⬇ Сервисам нужно то, что делает репозиторий (сохранение и нахождение).
-	// 22.05.26 Продолжить от сюда https://share.google/aimode/ixhlMNK4DoCFiNBij
+	// Выбор между именованным полем и неименованным (встраиванием/embedding)  https://share.google/aimode/ixhlMNK4DoCFiNBij
 	services := usecase.New(repos)
 	// ⬇ Хендлерам нужно то, что делает сервис (форматирование в результирующую строку, работа по сокращению, работа по получению).
 	handlers := v1.NewRouter(r, services, cfg, log)

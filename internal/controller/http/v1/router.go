@@ -37,9 +37,6 @@ func NewRouter(handler *chi.Mux, sh *usecase.Shortener, cfg config.Config, log *
 	handler.Post("/", r.shortenText)
 	handler.Get("/{id}", r.redirect)
 
-	// handler.Post("/", shortenText(service, cfg, log))
-	// handler.Get("/{id}", redirect(service, log))
-
 	// // Если нужно группировать маршруты, то выглядит примерно так:
 	// handler.Route("/v1", func(chiRouter chi.Router) {
 	// 	chiRouter.Post("/", r.shortenText)
