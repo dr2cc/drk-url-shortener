@@ -14,5 +14,7 @@ require (
 
 require (
 	github.com/Marlliton/slogpretty v0.1.3
+	github.com/go-playground/assert/v2 v2.2.0
 	github.com/samber/slog-chi v1.19.1
+	go.uber.org/mock v0.6.0
 )

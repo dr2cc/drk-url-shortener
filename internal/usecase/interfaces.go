@@ -1,7 +1,9 @@
 package usecase
 
 // 📍(сюда вернуться) Stabilization Stage (Production-Ready MVP)
-// 5️⃣ Полноценная обработка контекста (context.Context)
+// 5️⃣ context.Context - Полноценная обработка контекста
+
+//go:generate mockgen -source=interfaces.go -destination=mocks/mock_interfaces.go -package=mocks
 type (
 	// Интерфейсы самих Use Cases (Сервисов) —
 	// контракты, которые нужны транспорту (controller / хэндлеры).
