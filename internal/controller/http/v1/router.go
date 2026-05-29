@@ -14,7 +14,7 @@ import (
 
 // Описываем структуру роутера для v1.
 // Она инкапсулирует в себя зависимости, необходимые всем хэндлерам.
-type router struct {
+type Router struct {
 	shortener *usecase.Shortener // Переходим на interface вместо конкретной структуры
 	cfg       config.Config
 	log       *slog.Logger
@@ -24,7 +24,7 @@ type router struct {
 // Он возвращает готовый http.Handler, который можно подключить в главном app.go
 func NewRouter(handler *chi.Mux, sh *usecase.Shortener, cfg config.Config, log *slog.Logger) *chi.Mux {
 	// Инициализируем нашу внутреннюю структуру с зависимостями
-	r := &router{
+	r := &Router{
 		shortener: sh,
 		cfg:       cfg,
 		log:       log,

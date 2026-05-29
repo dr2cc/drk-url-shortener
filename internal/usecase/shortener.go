@@ -21,7 +21,7 @@ const slugLength = 6
 type Shortener struct {
 	// «Accept interfaces (ShortURLRepo)🔜,
 	// Доступ к методам интерфейса будет происходить строго через имя этого поля (s.repo.Save())
-	repo ShortURLRepo
+	Repo ShortURLRepo
 }
 
 // New -.
@@ -29,7 +29,7 @@ type Shortener struct {
 func New(repo ShortURLRepo) *Shortener {
 	// 🔙return structs»
 	return &Shortener{
-		repo: repo,
+		Repo: repo,
 	}
 }
 
@@ -42,7 +42,7 @@ func New(repo ShortURLRepo) *Shortener {
 func (s *Shortener) Shorten(url string) (string, error) {
 	slug := random.NewRandomString(slugLength)
 	// Вызываем контракт базы данных через интерфейс
-	err := s.repo.Save(slug, url)
+	err := s.Repo.Save(slug, url)
 	if err != nil {
 		return "", err
 	}
@@ -51,7 +51,7 @@ func (s *Shortener) Shorten(url string) (string, error) {
 
 func (s Shortener) GetOriginal(slug string) (string, error) {
 	// Получаем оригинальный URL из репозитория
-	url, err := s.repo.Get(slug)
+	url, err := s.Repo.Get(slug)
 	if err != nil {
 		return "", err
 	}

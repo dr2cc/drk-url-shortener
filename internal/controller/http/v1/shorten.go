@@ -6,7 +6,7 @@ import (
 )
 
 // Все негативные кейсы- возвращаем 400 = http.StatusBadRequest
-func (r router) shortenText(w http.ResponseWriter, req *http.Request) {
+func (r Router) shortenText(w http.ResponseWriter, req *http.Request) {
 	// 1. Проверяем метод. В иудаике респонс — это ответ на вопрос.
 	// Наш мудрец отвечает только на подношение данных (POST).
 	if req.Method != http.MethodPost {

@@ -1,5 +1,10 @@
 package repository
 
+import "errors"
+
+// Создаем понятную ошибку для внешнего мира
+var ErrNotFound = errors.New("url not found")
+
 type Cache struct {
 	db map[string]string
 }
@@ -17,6 +22,13 @@ func (c Cache) Save(alias string, url string) error {
 	return nil
 }
 func (c Cache) Get(alias string) (string, error) {
-	url := c.db[alias]
+	// Синтаксис url := c.db[alias] не возвращает ошибку в привычном виде error.
+	// Вместо этого мапа возвращает второе булево значение (обычно его называют ok),
+	// которое показывает, есть ли такой ключ в мапе.
+	url, ok := c.db[alias]
+	if !ok {
+		return "", ErrNotFound
+	}
+
 	return url, nil
 }
