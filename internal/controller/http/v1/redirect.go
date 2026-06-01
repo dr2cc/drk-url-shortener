@@ -1,33 +1,40 @@
 package v1
 
 import (
+	"drk-url-shortener/internal/usecase"
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 )
 
 func (r Router) redirect(w http.ResponseWriter, req *http.Request) {
-	// Ниже- родной для chi метод определения id
-	// Но с ним не работают простые (и универсальные) тесты
 	id := chi.URLParam(req, "id")
-	// // Стандартный для встроенного роутера, должен поддерживаться chi в 2026
-	// id := req.PathValue("id")
 
 	if req.Method != http.MethodGet {
 		http.Error(w, "accepts GET requests!", http.StatusBadRequest)
 		return
 	}
 
-	// Обращение к сервису за url
+	// Обращение к UseCase/Интерактору за url
 	url, err := r.shortener.GetOriginal(id)
-
 	if err != nil {
-		r.log.Error("shortener.GetOriginal error:", "err", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		// 1. Логируем ВСЕГДА полную техническую ошибку для разработчиков
+		r.log.Error("shortener.GetOriginal error", "err", err, "id", id)
+
+		// 2. Проверяем бизнес-ошибку для пользователя
+		if errors.Is(err, usecase.ErrCodeNotFound) {
+			// Возвращаем понятный текст и правильный статус-код по ТЗ (400)
+			http.Error(w, "short link not found", http.StatusBadRequest)
+			return
+		}
+
+		// 3. Для всех остальных неизвестных ошибок (упала база, сеть и т.д.)
+		// должны отдавать стандартный http.StatusInternalServerError, по ТЗ (400)
+		http.Error(w, "internal server error", http.StatusBadRequest)
 		return
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
 	http.Redirect(w, req, url, http.StatusTemporaryRedirect)
-	// fmt.Fprintf(w, "www.google.com %s", time.Now())
 }

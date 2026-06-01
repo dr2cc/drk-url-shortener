@@ -15,17 +15,16 @@ import (
 // Описываем структуру роутера для v1.
 // Она инкапсулирует в себя зависимости, необходимые всем хэндлерам.
 type Router struct {
-	shortener *usecase.Shortener // Переходим на interface вместо конкретной структуры
+	shortener usecase.UseCase // Переходим на interface вместо конкретной структуры
 	cfg       config.Config
 	log       *slog.Logger
 }
 
-// NewRouter — конструктор, который настраивает маршруты для версии v1.
-// Он возвращает готовый http.Handler, который можно подключить в главном app.go
-func NewRouter(handler *chi.Mux, sh *usecase.Shortener, cfg config.Config, log *slog.Logger) *chi.Mux {
+// Принимай интерфейсы (uc usecase.UseCase), возвращай структуры (*chi.Mux)
+func NewRouter(handler *chi.Mux, uc usecase.UseCase, cfg config.Config, log *slog.Logger) *chi.Mux {
 	// Инициализируем нашу внутреннюю структуру с зависимостями
 	r := &Router{
-		shortener: sh,
+		shortener: uc,
 		cfg:       cfg,
 		log:       log,
 	}

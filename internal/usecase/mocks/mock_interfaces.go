@@ -15,32 +15,32 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-// MockShortURL is a mock of ShortURL interface.
-type MockShortURL struct {
+// MockUseCase is a mock of UseCase interface.
+type MockUseCase struct {
 	ctrl     *gomock.Controller
-	recorder *MockShortURLMockRecorder
+	recorder *MockUseCaseMockRecorder
 	isgomock struct{}
 }
 
-// MockShortURLMockRecorder is the mock recorder for MockShortURL.
-type MockShortURLMockRecorder struct {
-	mock *MockShortURL
+// MockUseCaseMockRecorder is the mock recorder for MockUseCase.
+type MockUseCaseMockRecorder struct {
+	mock *MockUseCase
 }
 
-// NewMockShortURL creates a new mock instance.
-func NewMockShortURL(ctrl *gomock.Controller) *MockShortURL {
-	mock := &MockShortURL{ctrl: ctrl}
-	mock.recorder = &MockShortURLMockRecorder{mock}
+// NewMockUseCase creates a new mock instance.
+func NewMockUseCase(ctrl *gomock.Controller) *MockUseCase {
+	mock := &MockUseCase{ctrl: ctrl}
+	mock.recorder = &MockUseCaseMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockShortURL) EXPECT() *MockShortURLMockRecorder {
+func (m *MockUseCase) EXPECT() *MockUseCaseMockRecorder {
 	return m.recorder
 }
 
 // FormatShortURL mocks base method.
-func (m *MockShortURL) FormatShortURL(baseURL, urlID string) string {
+func (m *MockUseCase) FormatShortURL(baseURL, urlID string) string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FormatShortURL", baseURL, urlID)
 	ret0, _ := ret[0].(string)
@@ -48,13 +48,13 @@ func (m *MockShortURL) FormatShortURL(baseURL, urlID string) string {
 }
 
 // FormatShortURL indicates an expected call of FormatShortURL.
-func (mr *MockShortURLMockRecorder) FormatShortURL(baseURL, urlID any) *gomock.Call {
+func (mr *MockUseCaseMockRecorder) FormatShortURL(baseURL, urlID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FormatShortURL", reflect.TypeOf((*MockShortURL)(nil).FormatShortURL), baseURL, urlID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FormatShortURL", reflect.TypeOf((*MockUseCase)(nil).FormatShortURL), baseURL, urlID)
 }
 
 // GetOriginal mocks base method.
-func (m *MockShortURL) GetOriginal(slug string) (string, error) {
+func (m *MockUseCase) GetOriginal(slug string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOriginal", slug)
 	ret0, _ := ret[0].(string)
@@ -63,13 +63,13 @@ func (m *MockShortURL) GetOriginal(slug string) (string, error) {
 }
 
 // GetOriginal indicates an expected call of GetOriginal.
-func (mr *MockShortURLMockRecorder) GetOriginal(slug any) *gomock.Call {
+func (mr *MockUseCaseMockRecorder) GetOriginal(slug any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOriginal", reflect.TypeOf((*MockShortURL)(nil).GetOriginal), slug)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOriginal", reflect.TypeOf((*MockUseCase)(nil).GetOriginal), slug)
 }
 
 // Shorten mocks base method.
-func (m *MockShortURL) Shorten(url string) (string, error) {
+func (m *MockUseCase) Shorten(url string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Shorten", url)
 	ret0, _ := ret[0].(string)
@@ -78,37 +78,75 @@ func (m *MockShortURL) Shorten(url string) (string, error) {
 }
 
 // Shorten indicates an expected call of Shorten.
-func (mr *MockShortURLMockRecorder) Shorten(url any) *gomock.Call {
+func (mr *MockUseCaseMockRecorder) Shorten(url any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shorten", reflect.TypeOf((*MockShortURL)(nil).Shorten), url)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shorten", reflect.TypeOf((*MockUseCase)(nil).Shorten), url)
 }
 
-// MockShortURLRepo is a mock of ShortURLRepo interface.
-type MockShortURLRepo struct {
+// MockCodeGenerator is a mock of CodeGenerator interface.
+type MockCodeGenerator struct {
 	ctrl     *gomock.Controller
-	recorder *MockShortURLRepoMockRecorder
+	recorder *MockCodeGeneratorMockRecorder
 	isgomock struct{}
 }
 
-// MockShortURLRepoMockRecorder is the mock recorder for MockShortURLRepo.
-type MockShortURLRepoMockRecorder struct {
-	mock *MockShortURLRepo
+// MockCodeGeneratorMockRecorder is the mock recorder for MockCodeGenerator.
+type MockCodeGeneratorMockRecorder struct {
+	mock *MockCodeGenerator
 }
 
-// NewMockShortURLRepo creates a new mock instance.
-func NewMockShortURLRepo(ctrl *gomock.Controller) *MockShortURLRepo {
-	mock := &MockShortURLRepo{ctrl: ctrl}
-	mock.recorder = &MockShortURLRepoMockRecorder{mock}
+// NewMockCodeGenerator creates a new mock instance.
+func NewMockCodeGenerator(ctrl *gomock.Controller) *MockCodeGenerator {
+	mock := &MockCodeGenerator{ctrl: ctrl}
+	mock.recorder = &MockCodeGeneratorMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockShortURLRepo) EXPECT() *MockShortURLRepoMockRecorder {
+func (m *MockCodeGenerator) EXPECT() *MockCodeGeneratorMockRecorder {
+	return m.recorder
+}
+
+// RandomString mocks base method.
+func (m *MockCodeGenerator) RandomString() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RandomString")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// RandomString indicates an expected call of RandomString.
+func (mr *MockCodeGeneratorMockRecorder) RandomString() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RandomString", reflect.TypeOf((*MockCodeGenerator)(nil).RandomString))
+}
+
+// MockRepository is a mock of Repository interface.
+type MockRepository struct {
+	ctrl     *gomock.Controller
+	recorder *MockRepositoryMockRecorder
+	isgomock struct{}
+}
+
+// MockRepositoryMockRecorder is the mock recorder for MockRepository.
+type MockRepositoryMockRecorder struct {
+	mock *MockRepository
+}
+
+// NewMockRepository creates a new mock instance.
+func NewMockRepository(ctrl *gomock.Controller) *MockRepository {
+	mock := &MockRepository{ctrl: ctrl}
+	mock.recorder = &MockRepositoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockRepository) EXPECT() *MockRepositoryMockRecorder {
 	return m.recorder
 }
 
 // Get mocks base method.
-func (m *MockShortURLRepo) Get(slug string) (string, error) {
+func (m *MockRepository) Get(slug string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", slug)
 	ret0, _ := ret[0].(string)
@@ -117,13 +155,13 @@ func (m *MockShortURLRepo) Get(slug string) (string, error) {
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockShortURLRepoMockRecorder) Get(slug any) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) Get(slug any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockShortURLRepo)(nil).Get), slug)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockRepository)(nil).Get), slug)
 }
 
 // Save mocks base method.
-func (m *MockShortURLRepo) Save(slug, url string) error {
+func (m *MockRepository) Save(slug, url string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Save", slug, url)
 	ret0, _ := ret[0].(error)
@@ -131,7 +169,7 @@ func (m *MockShortURLRepo) Save(slug, url string) error {
 }
 
 // Save indicates an expected call of Save.
-func (mr *MockShortURLRepoMockRecorder) Save(slug, url any) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) Save(slug, url any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockShortURLRepo)(nil).Save), slug, url)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockRepository)(nil).Save), slug, url)
 }

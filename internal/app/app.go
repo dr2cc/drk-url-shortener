@@ -4,6 +4,7 @@ import (
 	"drk-url-shortener/internal/config"
 	v1 "drk-url-shortener/internal/controller/http/v1"
 	"drk-url-shortener/internal/lib/logger/sl"
+	"drk-url-shortener/internal/lib/random"
 	"drk-url-shortener/internal/repository"
 	"drk-url-shortener/internal/usecase"
 
@@ -31,13 +32,16 @@ func Run(cfg config.Config) error {
 	// handler
 	r := chi.NewRouter()
 
+	// Генератор кодов
+	generator := random.NewBase62Generator()
+
 	// DI
 	repos := repository.New()
 	// ⬇ Сервисам нужно то, что делает репозиторий (сохранение и нахождение).
 	// Выбор между именованным полем и неименованным (встраиванием/embedding)  https://share.google/aimode/ixhlMNK4DoCFiNBij
-	services := usecase.New(repos)
+	shortenerUseCase := usecase.New(repos, generator)
 	// ⬇ Хендлерам нужно то, что делает сервис (форматирование в результирующую строку, работа по сокращению, работа по получению).
-	handlers := v1.NewRouter(r, services, cfg, log)
+	handlers := v1.NewRouter(r, shortenerUseCase, cfg, log)
 
 	// 📍(сюда вернуться) Stabilization Stage (Production-Ready MVP)
 	// 5️⃣ Полноценная обработка контекста (context.Context)

@@ -1,13 +1,10 @@
 package usecase
 
 import (
-	"drk-url-shortener/internal/lib/random"
+	"errors"
 	"fmt"
 	"strings"
 )
-
-// Slug (слаг) — это часть URL-адреса, которая идентифицирует конкретную страницу или ресурс в человекочитаемом виде.
-const slugLength = 6
 
 // ShortenerUseCase -.
 // Здесь нужно использовать именованные поля (композиция или явное делегирование).
@@ -21,15 +18,17 @@ const slugLength = 6
 type Shortener struct {
 	// «Accept interfaces (ShortURLRepo)🔜,
 	// Доступ к методам интерфейса будет происходить строго через имя этого поля (s.repo.Save())
-	Repo ShortURLRepo
+	Repo      Repository
+	generator CodeGenerator
 }
 
 // New -.
 // Передаем интерфейс ShortURLRepo вместо *указателя на репозиторий
-func New(repo ShortURLRepo) *Shortener {
+func New(r Repository, g CodeGenerator) *Shortener {
 	// 🔙return structs»
 	return &Shortener{
-		Repo: repo,
+		Repo:      r,
+		generator: g,
 	}
 }
 
@@ -40,7 +39,8 @@ func New(repo ShortURLRepo) *Shortener {
 // Результат зависит от того, что сейчас лежит в БД и что вернет генератор.
 // Именно для тестирования таких методов вам и нужен gomock.
 func (s *Shortener) Shorten(url string) (string, error) {
-	slug := random.NewRandomString(slugLength)
+	// Вызов технического СЕРВИСА: Генерируем уникальный хэш-код
+	slug := s.generator.RandomString()
 	// Вызываем контракт базы данных через интерфейс
 	err := s.Repo.Save(slug, url)
 	if err != nil {
@@ -53,7 +53,15 @@ func (s Shortener) GetOriginal(slug string) (string, error) {
 	// Получаем оригинальный URL из репозитория
 	url, err := s.Repo.Get(slug)
 	if err != nil {
-		return "", err
+		// 2. Проверяем: если это ошибка "не найдено" из репозитория
+		if errors.Is(err, ErrStorageNotFound) {
+			// Возвращаем чистую бизнес-ошибку наружу (роутеру)
+			return "", ErrCodeNotFound
+		}
+
+		// Любую другую техническую ошибку (например, упала сеть к БД)
+		// оборачиваем через %w, чтобы не терять контекст для логов
+		return "", fmt.Errorf("failed to get url from repository: %w", err)
 	}
 	return url, nil
 }

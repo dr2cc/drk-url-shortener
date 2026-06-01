@@ -15,7 +15,7 @@ import "drk-url-shortener/internal/usecase"
 // и нам выгодно автоматически делегировать вызовы нижележащему кэшу или базе данных.
 type Repository struct {
 	// usecase.ShortURLRepo описывает только то, что нужно сервису от репозитория (сохранение и нахождение)
-	usecase.ShortURLRepo
+	usecase.Repository
 	// 🧾 В Go внедрение интерфейса без имени (встраивание или embedding) создает поле,
 	// имя которого совпадает с именем самого типа (в данном случае ShortURLRepo).
 }
@@ -23,6 +23,6 @@ type Repository struct {
 func New() *Repository {
 	// 🔙return structs».
 	return &Repository{
-		ShortURLRepo: NewCache(),
+		Repository: NewCache(),
 	}
 }

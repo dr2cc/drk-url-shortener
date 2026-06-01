@@ -1,9 +1,8 @@
 package repository
 
-import "errors"
-
-// Создаем понятную ошибку для внешнего мира
-var ErrNotFound = errors.New("url not found")
+import (
+	"drk-url-shortener/internal/usecase"
+)
 
 type Cache struct {
 	db map[string]string
@@ -27,7 +26,7 @@ func (c Cache) Get(alias string) (string, error) {
 	// которое показывает, есть ли такой ключ в мапе.
 	url, ok := c.db[alias]
 	if !ok {
-		return "", ErrNotFound
+		return "", usecase.ErrStorageNotFound
 	}
 
 	return url, nil
