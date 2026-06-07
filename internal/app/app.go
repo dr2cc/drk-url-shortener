@@ -20,28 +20,29 @@ func Run(cfg config.Config) error {
 	// Логер добавден.
 	// Еще следует добавить:
 	// Трейсинг: Внедрение OpenTelemetry (Jaeger) для отслеживания пути запроса, особенно когда проект начнет ходить в базу данных.
-	// (в yp это отдельный трек) Метрики: Интеграция с Prometheus для отслеживания количества запросов (RPS), времени ответа (latency) и количества ошибок 4xx / 5xx.
+	// Метрики (в yp это отдельный трек): Интеграция с Prometheus для отслеживания количества запросов (RPS), времени ответа (latency) и количества ошибок 4xx / 5xx.
 	log := sl.SetupLogger(cfg.Env)
 	slog.SetDefault(log)
 	log.Info("starting application", slog.String("env", cfg.Env))
 
 	// 📍(сюда вернуться) Stabilization Stage (Production-Ready MVP)
 	// 3️⃣ Инфраструктурный слой- db
-	// Будет осуществлено в iter9 (сохранение сокращенных URL в файл при выходе и загрузка из него при запуске)) и затем в iter10 (pg)
+	// Будет осуществлено в iter9 (сохранение сокращенных URL в файл при выходе и загрузка из него при запуске))
+	// и затем в iter10 (pg)
 
-	// handler
-	r := chi.NewRouter()
-
-	// Генератор кодов
-	generator := random.NewBase62Generator()
+	// mux
+	mux := chi.NewRouter()
 
 	// DI
+	generator := random.NewBase62Generator() // генератор кодов
+
 	repos := repository.New()
 	// ⬇ Сервисам нужно то, что делает репозиторий (сохранение и нахождение).
 	// Выбор между именованным полем и неименованным (встраиванием/embedding)  https://share.google/aimode/ixhlMNK4DoCFiNBij
 	shortenerUseCase := usecase.New(repos, generator)
-	// ⬇ Хендлерам нужно то, что делает сервис (форматирование в результирующую строку, работа по сокращению, работа по получению).
-	handlers := v1.NewRouter(r, shortenerUseCase, cfg, log)
+	// ⬇ Хендлерам нужно то, что делает сервис (форматирование в результирующую строку,
+	// работа по сокращению, работа по получению).
+	handlers := v1.NewRouter(mux, shortenerUseCase, cfg, log)
 
 	// 📍(сюда вернуться) Stabilization Stage (Production-Ready MVP)
 	// 5️⃣ Полноценная обработка контекста (context.Context)

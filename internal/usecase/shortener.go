@@ -23,7 +23,7 @@ type Shortener struct {
 }
 
 // New -.
-// Передаем интерфейс ShortURLRepo вместо *указателя на репозиторий
+// Принимай интерфейсы (Repository, CodeGenerator), возвращай структуры (*Shortener)
 func New(r Repository, g CodeGenerator) *Shortener {
 	// 🔙return structs»
 	return &Shortener{

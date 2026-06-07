@@ -15,7 +15,7 @@ func NewBase62Generator() *base62Generator {
 	return &base62Generator{length: tokenLength}
 }
 
-// NewRandomString generates random string with given size.
+// RandomString generates random string with given size.
 func (g *base62Generator) RandomString() string {
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 

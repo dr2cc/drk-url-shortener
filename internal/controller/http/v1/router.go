@@ -15,12 +15,12 @@ import (
 // Описываем структуру роутера для v1.
 // Она инкапсулирует в себя зависимости, необходимые всем хэндлерам.
 type Router struct {
-	shortener usecase.UseCase // Переходим на interface вместо конкретной структуры
+	shortener usecase.UseCase // interface вместо конкретной структуры
 	cfg       config.Config
 	log       *slog.Logger
 }
 
-// Принимай интерфейсы (uc usecase.UseCase), возвращай структуры (*chi.Mux)
+// Принимай интерфейсы (usecase.UseCase), возвращай структуры (*chi.Mux)
 func NewRouter(handler *chi.Mux, uc usecase.UseCase, cfg config.Config, log *slog.Logger) *chi.Mux {
 	// Инициализируем нашу внутреннюю структуру с зависимостями
 	r := &Router{
