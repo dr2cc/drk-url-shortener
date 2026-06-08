@@ -27,7 +27,7 @@ func New() (Config, error) {
 	// 	log.Fatalf("Error loading env variables: %s", err.Error())
 	// }
 
-	// Разбираем переменные окружения в конфигурацию
+	// Разбираем переменные окружения в конфигурацию (caarlos0/env)
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatalf("Config parsing error: %+v\n", err)
 		return Config{}, err
