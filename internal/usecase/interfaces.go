@@ -10,10 +10,10 @@ type (
 		// Функцонал:
 		// Форматирование ID в результирующую строку
 		FormatShortURL(baseURL string, urlID string) string
-		// Shorten получает длинный URL и возвращает сгенерированный короткий код
+		// Shorten получает полный URL и возвращает сгенерированный короткий код
 		Shorten(url string) (string, error)
 		// GetOriginal находит в хранилище полный URL-адрес по указанному коду
-		// (в дальнейшем еще и возвращает заполненную структуру link.ExpandedURL)
+		// (в дальнейшем еще и возвращает заполненную структуру link.ExpandedURL или как решу назвать)
 		GetOriginal(slug string) (string, error)
 	}
 
@@ -23,7 +23,7 @@ type (
 	}
 
 	// Интерфейсы репозиториев (Repositories) —
-	// контракты, которые нужны юзкейсам для работы с БД (в evrone реализует их в пакете usecase/repo).
+	// контракты, которые нужны юзкейсам для работы с БД (в evrone реализуют их в пакете usecase/repo).
 	// То, что юзкейс требует от базы данных
 	Repository interface {
 		Save(slug, url string) error
