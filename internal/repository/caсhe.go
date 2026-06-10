@@ -8,7 +8,7 @@ type Cache struct {
 	db map[string]string
 }
 
-func NewCache() Cache {
+func newCache() Cache {
 	// «Accept interfaces, 🔙return structs».
 	// Возвращаем структуру (Cache), реализующую интерфейс usecase.ShortURLRepo
 	return Cache{
