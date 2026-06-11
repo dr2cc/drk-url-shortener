@@ -10,7 +10,7 @@ type Cache struct {
 
 func newCache() Cache {
 	// «Accept interfaces, 🔙return structs».
-	// Возвращаем структуру (Cache), реализующую интерфейс usecase.ShortURLRepo
+	// Возвращаем структуру (Cache), реализующую интерфейс usecase.Repository
 	return Cache{
 		db: make(map[string]string),
 	}

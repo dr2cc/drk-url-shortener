@@ -36,12 +36,11 @@ func Run(cfg config.Config) error {
 	// DI
 	generator := random.NewBase62Generator() // генератор кодов
 
+	// Выбор между именованным полем и неименованным (встраиванием/embedding)  https://share.google/aimode/ixhlMNK4DoCFiNBij
 	repos := repository.New()
 	// ⬇ Сервисам нужно то, что делает репозиторий (сохранение и нахождение).
-	// Выбор между именованным полем и неименованным (встраиванием/embedding)  https://share.google/aimode/ixhlMNK4DoCFiNBij
 	shortenerUseCase := usecase.New(repos, generator)
-	// ⬇ Хендлерам нужно то, что делает сервис (форматирование в результирующую строку,
-	// работа по сокращению, работа по получению).
+	// ⬇ Хендлерам нужно то, что делает сервис (форматирование, работа по сокращению, работа по получению).
 	handlers := v1.NewRouter(mux, shortenerUseCase, cfg, log)
 
 	// 📍(сюда вернуться) Stabilization Stage (Production-Ready MVP)
