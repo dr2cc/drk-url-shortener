@@ -21,6 +21,7 @@ func (r Router) shortenText(w http.ResponseWriter, req *http.Request) {
 	// Читаем из того, что "можно читать" (Reader)
 	body, err := io.ReadAll(limitReader)
 	if err != nil {
+		// Scroll- свиток!
 		http.Error(w, "Scroll reading error", http.StatusBadRequest)
 		return
 	}
@@ -35,6 +36,7 @@ func (r Router) shortenText(w http.ResponseWriter, req *http.Request) {
 
 	// Stabilization Stage (Production-Ready MVP)
 	// Выделение слоев (Чистая архитектура)
+	// Обращение к UseCase/интерактору за алиасом (usecase и записывает его в db)
 	alias, err := r.shortener.Shorten(string(body))
 	if err != nil {
 		r.log.Error("service.ShortenURL error:", "err", err)
@@ -50,7 +52,8 @@ func (r Router) shortenText(w http.ResponseWriter, req *http.Request) {
 
 	// 4️⃣ Возвращаем клиенту response.
 	// Готовим данные
-	content := r.shortener.FormatShortURL(r.cfg.BaseURL, alias)
+	// Обращение к UseCase/интерактору за форматированем
+	content := r.shortener.FormatShortURL(r.baseURL, alias)
 
 	// Из описания:
 	// Функция Write записывает данные в соединение (to the connection) в HTTP-ответе.

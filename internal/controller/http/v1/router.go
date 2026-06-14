@@ -16,7 +16,7 @@ import (
 // Она инкапсулирует в себя зависимости, необходимые всем хэндлерам.
 type Router struct {
 	shortener usecase.UseCase // interface вместо конкретной структуры
-	cfg       config.Config
+	baseURL   string
 	log       *slog.Logger
 }
 
@@ -25,14 +25,14 @@ func NewRouter(handler *chi.Mux, uc usecase.UseCase, cfg config.Config, log *slo
 	// Инициализируем нашу внутреннюю структуру с зависимостями
 	r := &Router{
 		shortener: uc,
-		cfg:       cfg,
+		baseURL:   cfg.BaseURL,
 		log:       log,
 	}
 
 	// Настраиваем middleware
 	handler.Use(slogchi.New(log))
 
-	// Привязываем эндпоинты напрямую к корню, как требует ТЗ
+	// Привязываем эндпоинты напрямую к корню (а не через v1), как требует ТЗ
 	handler.Post("/", r.shortenText)
 	handler.Get("/{id}", r.redirect)
 

@@ -37,6 +37,7 @@ func Run(cfg config.Config) error {
 	generator := random.NewBase62Generator() // генератор кодов
 
 	// Выбор между именованным полем и неименованным (встраиванием/embedding)  https://share.google/aimode/ixhlMNK4DoCFiNBij
+	// Using the Factory Pattern
 	repos := repository.New()
 	// ⬇ Сервисам нужно то, что делает репозиторий (сохранение и нахождение).
 	shortenerUseCase := usecase.New(repos, generator)
