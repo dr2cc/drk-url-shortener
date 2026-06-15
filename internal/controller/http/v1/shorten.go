@@ -14,12 +14,12 @@ func (r Router) shortenText(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// 2. Используем "слугу" io.LimitReader, чтобы подстраховаться.
-	// Читаем не более 2 КБ, чтобы не переполнить "память".
-	limitReader := io.LimitReader(req.Body, 2048)
+	// // Используем "слугу" io.LimitReader, чтобы подстраховаться.
+	// // СМЫСЛ понимаю, но не реализацию (особенно в тесте). Пока не делаю..
+	// limitReader := io.LimitReader(req.Body, 2048)
 
-	// Читаем из того, что "можно читать" (Reader)
-	body, err := io.ReadAll(limitReader)
+	// 2. Читаем из того, что "можно читать" (Reader)
+	body, err := io.ReadAll(req.Body) // (limitReader)
 	if err != nil {
 		// Scroll- свиток!
 		http.Error(w, "Scroll reading error", http.StatusBadRequest)
@@ -39,7 +39,9 @@ func (r Router) shortenText(w http.ResponseWriter, req *http.Request) {
 	// Обращение к UseCase/интерактору за алиасом (usecase и записывает его в db)
 	alias, err := r.shortener.Shorten(string(body))
 	if err != nil {
-		r.log.Error("service.ShortenURL error:", "err", err)
+		// Полная ошибка в лог
+		r.log.Error("failed to add url", "err", err)
+		http.Error(w, "failed to add url", http.StatusBadRequest)
 		return
 	}
 

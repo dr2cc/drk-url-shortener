@@ -1,13 +1,15 @@
 package v1
 
 import (
-	"bytes"
 	"drk-url-shortener/internal/usecase/mocks"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"testing/iotest"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
@@ -15,9 +17,7 @@ import (
 )
 
 func TestRouter_shortenText(t *testing.T) {
-	// Тестируется ЗАВИСИМОСТИ!
-
-	// Мы тестируем именно Router, поэтому он — sut (Система Под Тестом)
+	// Мы тестируем Router, поэтому он — sut (Система Под Тестом)
 	// 1. Передаем мок напрямую в роутер.
 	// 2. Вызываем метод у sut (здесь shortenText).
 	// 3. Проверяем, как хендлер отреагирует на ответы от интерактора Shortener.
@@ -27,32 +27,65 @@ func TestRouter_shortenText(t *testing.T) {
 	// Это callback-функция (так как эта логика передается внутрь теста, чтобы сработать в нужный момент), инъекция поведения.
 	// В данном случае принимает объект (структуру) имитирующий UseCase interface и ...
 
-	// В поведение передаем мок UseCase
-	type mockBehavior func(ucMock *mocks.MockUseCase, url string, baseURL string, slug string, expectedURL string)
+	// В поведение передаем мок UseCase и три основных параметра
+	type mockBehavior func(ucMock *mocks.MockUseCase, url string, baseURL string, slug string)
 
 	tests := []struct {
 		name               string
-		baseURL            string
 		url                string
+		baseURL            string
 		slug               string
-		expectedURL        string
 		expectedStatusCode int
+		body               io.ReadCloser // Изменили тип на io.ReadCloser, чтобы подходил io.NopCloser
 		mockBehavior       mockBehavior
 	}{
 		{
 			name:               "OK",
-			baseURL:            "http://localhost:8080",
 			url:                "https://google.com",
+			baseURL:            "http://localhost:8080",
 			slug:               "abc",
-			expectedURL:        "http://localhost:8080/abc",
 			expectedStatusCode: http.StatusCreated,
-			mockBehavior: func(ucMock *mocks.MockUseCase, url string, baseURL string, slug string, expectedURL string) {
+			body:               io.NopCloser(strings.NewReader("https://google.com")),
+			mockBehavior: func(ucMock *mocks.MockUseCase, url string, baseURL string, slug string) {
 				// «Когда роутер вызовет метод Shorten("https://google.com"), ничего не пиши в БД,
 				// а сразу Верни строку "abc" и ошибку nil»
 				ucMock.EXPECT().Shorten(url).Return(slug, nil)
 				// «Когда роутер вызовет метод FormatShortURL("http://localhost:8080","abc"), ничего не делай,
 				// а сразу Верни строку "http://localhost:8080/abc"»
-				ucMock.EXPECT().FormatShortURL(baseURL, slug).Return(expectedURL)
+				ucMock.EXPECT().FormatShortURL(baseURL, slug).Return("http://localhost:8080/abc")
+			},
+		},
+		{
+			// Ошибка чтения из body
+			name:               "Scroll reading error",
+			url:                "",
+			baseURL:            "http://localhost:8080",
+			slug:               "",
+			expectedStatusCode: http.StatusBadRequest,
+			// Создаем прямо в строке таблицы, ничего заранее описывать не нужно:
+			body:         io.NopCloser(iotest.ErrReader(errors.New("read error"))),
+			mockBehavior: func(ucMock *mocks.MockUseCase, url string, baseURL string, slug string) {}, // Хендлер упадет до UseCase
+		},
+		{
+			name:               "Empty URL",
+			url:                "",
+			baseURL:            "http://localhost:8080",
+			slug:               "",
+			expectedStatusCode: http.StatusBadRequest,
+			body:               io.NopCloser(strings.NewReader("")),
+			mockBehavior:       func(ucMock *mocks.MockUseCase, url string, baseURL string, slug string) {}, // Хендлер отбракует запрос до UseCase
+		},
+		{
+			name:               "SaveURL Error",
+			url:                "https://google.com",
+			baseURL:            "http://localhost:8080",
+			slug:               "",
+			expectedStatusCode: http.StatusBadRequest,
+			body:               io.NopCloser(strings.NewReader("https://google.com")),
+			mockBehavior: func(ucMock *mocks.MockUseCase, url string, baseURL string, slug string) {
+				// ... верни любую ошибку
+				ucMock.EXPECT().Shorten(url).Return(slug, errors.New("internal server error"))
+				// до второго метода не дойдет!
 			},
 		},
 	}
@@ -66,7 +99,7 @@ func TestRouter_shortenText(t *testing.T) {
 			ucMock := mocks.NewMockUseCase(ctrl)
 
 			// Настраиваем поведение мока под конкретный тест-кейс
-			tt.mockBehavior(ucMock, tt.url, tt.baseURL, tt.slug, tt.expectedURL)
+			tt.mockBehavior(ucMock, tt.url, tt.baseURL, tt.slug)
 
 			// Логгер-заглушка.
 			discardLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -86,7 +119,7 @@ func TestRouter_shortenText(t *testing.T) {
 
 			w := httptest.NewRecorder()
 			//
-			req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tt.url)))
+			req := httptest.NewRequest("POST", "/", tt.body) //bytes.NewReader([]byte(tt.url)))
 
 			// Выполнение действия (Act)
 			r.ServeHTTP(w, req)
@@ -94,6 +127,9 @@ func TestRouter_shortenText(t *testing.T) {
 			// Проверка утверждений (Assert)
 			// 3. Проверяем, как хендлер отреагирует на ответы от интерактора Shortener.
 			assert.Equal(t, tt.expectedStatusCode, w.Code)
+			if tt.name == "OK" {
+				assert.Equal(t, "http://localhost:8080/abc", w.Body.String())
+			}
 		})
 	}
 }
