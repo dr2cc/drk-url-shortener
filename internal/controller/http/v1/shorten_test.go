@@ -27,32 +27,37 @@ func TestRouter_shortenText(t *testing.T) {
 	// Это callback-функция (так как эта логика передается внутрь теста, чтобы сработать в нужный момент), инъекция поведения.
 	// В данном случае принимает объект (структуру) имитирующий UseCase interface и ...
 
-	// В поведение передаем мок UseCase и три основных параметра
-	type mockBehavior func(ucMock *mocks.MockUseCase, url string, baseURL string, slug string)
+	// // В поведение передаем мок UseCase и три основных параметра
+	// type mockBehavior func(ucMock *mocks.MockUseCase, url string, baseURL string, slug string)
 
-	tests := []struct {
+	type testCase struct {
 		name               string
 		url                string
 		baseURL            string
 		slug               string
 		expectedStatusCode int
-		body               io.ReadCloser // Изменили тип на io.ReadCloser, чтобы подходил io.NopCloser
-		mockBehavior       mockBehavior
-	}{
+		expectedBody       string
+		body               io.ReadCloser
+		mockBehavior       func(ucMock *mocks.MockUseCase, tc *testCase) // Передаем указатель на себя
+	}
+
+	// 2. Описываем таблицу тестов
+	tests := []testCase{
 		{
 			name:               "OK",
 			url:                "https://google.com",
 			baseURL:            "http://localhost:8080",
 			slug:               "abc",
 			expectedStatusCode: http.StatusCreated,
+			expectedBody:       "http://localhost:8080/abc",
 			body:               io.NopCloser(strings.NewReader("https://google.com")),
-			mockBehavior: func(ucMock *mocks.MockUseCase, url string, baseURL string, slug string) {
+			mockBehavior: func(ucMock *mocks.MockUseCase, tc *testCase) {
 				// «Когда роутер вызовет метод Shorten("https://google.com"), ничего не пиши в БД,
 				// а сразу Верни строку "abc" и ошибку nil»
-				ucMock.EXPECT().Shorten(url).Return(slug, nil)
+				ucMock.EXPECT().Shorten(tc.url).Return(tc.slug, nil)
 				// «Когда роутер вызовет метод FormatShortURL("http://localhost:8080","abc"), ничего не делай,
 				// а сразу Верни строку "http://localhost:8080/abc"»
-				ucMock.EXPECT().FormatShortURL(baseURL, slug).Return("http://localhost:8080/abc")
+				ucMock.EXPECT().FormatShortURL(tc.baseURL, tc.slug).Return(tc.expectedBody)
 			},
 		},
 		{
@@ -64,7 +69,7 @@ func TestRouter_shortenText(t *testing.T) {
 			expectedStatusCode: http.StatusBadRequest,
 			// Создаем прямо в строке таблицы, ничего заранее описывать не нужно:
 			body:         io.NopCloser(iotest.ErrReader(errors.New("read error"))),
-			mockBehavior: func(ucMock *mocks.MockUseCase, url string, baseURL string, slug string) {}, // Хендлер упадет до UseCase
+			mockBehavior: func(ucMock *mocks.MockUseCase, tc *testCase) {}, // Хендлер упадет до UseCase
 		},
 		{
 			name:               "Empty URL",
@@ -73,7 +78,7 @@ func TestRouter_shortenText(t *testing.T) {
 			slug:               "",
 			expectedStatusCode: http.StatusBadRequest,
 			body:               io.NopCloser(strings.NewReader("")),
-			mockBehavior:       func(ucMock *mocks.MockUseCase, url string, baseURL string, slug string) {}, // Хендлер отбракует запрос до UseCase
+			mockBehavior:       func(ucMock *mocks.MockUseCase, tc *testCase) {}, // Хендлер отбракует запрос до UseCase
 		},
 		{
 			name:               "SaveURL Error",
@@ -82,9 +87,9 @@ func TestRouter_shortenText(t *testing.T) {
 			slug:               "",
 			expectedStatusCode: http.StatusBadRequest,
 			body:               io.NopCloser(strings.NewReader("https://google.com")),
-			mockBehavior: func(ucMock *mocks.MockUseCase, url string, baseURL string, slug string) {
+			mockBehavior: func(ucMock *mocks.MockUseCase, tc *testCase) {
 				// ... верни любую ошибку
-				ucMock.EXPECT().Shorten(url).Return(slug, errors.New("internal server error"))
+				ucMock.EXPECT().Shorten(tc.url).Return(tc.slug, errors.New("internal server error"))
 				// до второго метода не дойдет!
 			},
 		},
@@ -99,7 +104,7 @@ func TestRouter_shortenText(t *testing.T) {
 			ucMock := mocks.NewMockUseCase(ctrl)
 
 			// Настраиваем поведение мока под конкретный тест-кейс
-			tt.mockBehavior(ucMock, tt.url, tt.baseURL, tt.slug)
+			tt.mockBehavior(ucMock, &tt)
 
 			// Логгер-заглушка.
 			discardLogger := slog.New(slog.NewTextHandler(io.Discard, nil))
