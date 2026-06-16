@@ -11,11 +11,6 @@ import (
 func (r Router) redirect(w http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 
-	if req.Method != http.MethodGet {
-		http.Error(w, "accepts GET requests!", http.StatusBadRequest)
-		return
-	}
-
 	// Обращение к UseCase/интерактору за url
 	url, err := r.shortener.GetOriginal(id)
 	if err != nil {
