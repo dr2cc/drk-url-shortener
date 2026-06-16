@@ -1,9 +1,81 @@
 package v1
 
 import (
+	"errors"
 	"io"
+	"log/slog"
 	"net/http"
+
+	resp "drk-url-shortener/internal/lib/api/response"
+	"drk-url-shortener/internal/lib/logger/sl"
+
+	"github.com/go-chi/render"
+	"github.com/go-playground/validator/v10"
 )
+
+type ShortenRequest struct {
+	URL string `json:"url"`
+}
+
+type ShortenResponse struct {
+	Result string `json:"result"`
+}
+
+func (r Router) shortenJson(w http.ResponseWriter, req *http.Request) {
+
+	var sr ShortenRequest
+
+	err := render.DecodeJSON(req.Body, &sr)
+	if errors.Is(err, io.EOF) {
+		// Такую ошибку встретим, если получили запрос с пустым телом.
+		// Обработаем её отдельно
+		r.log.Error("request body is empty")
+
+		http.Error(w, "URL not found in request body", http.StatusBadRequest)
+		render.JSON(w, req, resp.Error("empty request"))
+
+		return
+	}
+	if err != nil {
+		r.log.Error("failed to decode request body", sl.Err(err))
+
+		render.JSON(w, req, resp.Error("failed to decode request"))
+
+		return
+	}
+
+	r.log.Info("request body decoded", slog.Any("request", sr))
+	if err := validator.New().Struct(sr); err != nil {
+		validateErr := err.(validator.ValidationErrors)
+
+		r.log.Error("invalid request", sl.Err(err))
+
+		render.JSON(w, req, resp.ValidationError(validateErr))
+
+		return
+	}
+
+	alias, err := r.shortener.Shorten(sr.URL)
+	if err != nil {
+		// Полная ошибка в лог
+		r.log.Error("failed to add url", sl.Err(err))
+
+		render.JSON(w, req, resp.Error("failed to add url"))
+		// http.Error(w, "failed to add url", http.StatusBadRequest)
+		return
+	}
+	r.log.Info("url added", slog.String("id", alias))
+
+	responseOK(w, req, alias)
+
+}
+
+func responseOK(w http.ResponseWriter, r *http.Request, alias string) {
+	w.WriteHeader(http.StatusCreated)
+	render.JSON(w, r, ShortenResponse{
+		Result: alias,
+	})
+}
 
 // Все негативные кейсы- возвращаем 400 = http.StatusBadRequest
 func (r Router) shortenText(w http.ResponseWriter, req *http.Request) {
