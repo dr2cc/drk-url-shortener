@@ -14,14 +14,14 @@ import (
 )
 
 type ShortenRequest struct {
-	URL string `json:"url"`
+	URL string `json:"url" validate:"required,url"`
 }
 
 type ShortenResponse struct {
 	Result string `json:"result"`
 }
 
-func (r Router) shortenJson(w http.ResponseWriter, req *http.Request) {
+func (r Router) shortenJSON(w http.ResponseWriter, req *http.Request) {
 
 	var sr ShortenRequest
 
@@ -66,14 +66,20 @@ func (r Router) shortenJson(w http.ResponseWriter, req *http.Request) {
 	}
 	r.log.Info("url added", slog.String("id", alias))
 
-	responseOK(w, req, alias)
+	// responseOK(w, req, alias)
 
-}
+	// }
 
-func responseOK(w http.ResponseWriter, r *http.Request, alias string) {
+	// func responseOK(w http.ResponseWriter, r *http.Request, alias string) {
+
+	// 📌render.JSON устанавливает нужный Content-Type, но нам нужен http.StatusCreated
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	render.JSON(w, r, ShortenResponse{
-		Result: alias,
+
+	// Обращение к UseCase/интерактору за форматированем
+	content := r.shortener.FormatShortURL(r.baseURL, alias)
+	render.JSON(w, req, ShortenResponse{
+		Result: content,
 	})
 }
 

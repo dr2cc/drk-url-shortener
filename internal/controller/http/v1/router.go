@@ -35,7 +35,7 @@ func NewRouter(handler *chi.Mux, uc usecase.UseCase, cfg config.Config, log *slo
 	// Привязываем эндпоинты напрямую к корню (а не через v1), как требует ТЗ
 	handler.Post("/", r.shortenText)
 	handler.Get("/{id}", r.redirect)
-	handler.Post("/api/shorten", r.shortenJson)
+	handler.Post("/api/shorten", r.shortenJSON)
 
 	// // Если нужно группировать маршруты, то выглядит примерно так:
 	// handler.Route("/v1", func(chiRouter chi.Router) {
