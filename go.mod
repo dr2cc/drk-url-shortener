@@ -13,6 +13,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/josharian/intern v1.0.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -30,6 +31,7 @@ require (
 	github.com/go-chi/render v1.0.3
 	github.com/go-playground/assert/v2 v2.2.0
 	github.com/go-playground/validator/v10 v10.30.3
+	github.com/mailru/easyjson v0.9.2
 	github.com/rs/zerolog v1.35.1
 	github.com/samber/slog-chi v1.19.1
 	github.com/stretchr/testify v1.11.1

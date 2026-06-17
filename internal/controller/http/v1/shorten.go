@@ -6,8 +6,11 @@ import (
 	"log/slog"
 	"net/http"
 
-	resp "drk-url-shortener/internal/lib/api/response"
 	"drk-url-shortener/internal/lib/logger/sl"
+
+	_ "encoding/json"
+
+	_ "github.com/mailru/easyjson" // Позволит пройти валидацию импортов
 
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
@@ -32,25 +35,27 @@ func (r Router) shortenJSON(w http.ResponseWriter, req *http.Request) {
 		r.log.Error("request body is empty")
 
 		http.Error(w, "URL not found in request body", http.StatusBadRequest)
-		render.JSON(w, req, resp.Error("empty request"))
+		// 	render.JSON(w, req, ShortenResponse{
+		// 	Result: "URL not found in request body",
+		// })
 
 		return
 	}
 	if err != nil {
 		r.log.Error("failed to decode request body", sl.Err(err))
-
-		render.JSON(w, req, resp.Error("failed to decode request"))
+		http.Error(w, "failed to decode request body", http.StatusBadRequest)
+		// render.JSON(w, req, resp.Error("failed to decode request"))
 
 		return
 	}
 
 	r.log.Info("request body decoded", slog.Any("request", sr))
 	if err := validator.New().Struct(sr); err != nil {
-		validateErr := err.(validator.ValidationErrors)
+		// validateErr := err.(validator.ValidationErrors)
 
 		r.log.Error("invalid request", sl.Err(err))
-
-		render.JSON(w, req, resp.ValidationError(validateErr))
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		// render.JSON(w, req, resp.ValidationError(validateErr))
 
 		return
 	}
@@ -59,18 +64,12 @@ func (r Router) shortenJSON(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		// Полная ошибка в лог
 		r.log.Error("failed to add url", sl.Err(err))
+		http.Error(w, "failed to add url", http.StatusBadRequest)
+		// render.JSON(w, req, resp.Error("failed to add url"))
 
-		render.JSON(w, req, resp.Error("failed to add url"))
-		// http.Error(w, "failed to add url", http.StatusBadRequest)
 		return
 	}
 	r.log.Info("url added", slog.String("id", alias))
-
-	// responseOK(w, req, alias)
-
-	// }
-
-	// func responseOK(w http.ResponseWriter, r *http.Request, alias string) {
 
 	// 📌render.JSON устанавливает нужный Content-Type, но нам нужен http.StatusCreated
 	w.Header().Set("Content-Type", "application/json")
@@ -78,6 +77,7 @@ func (r Router) shortenJSON(w http.ResponseWriter, req *http.Request) {
 
 	// Обращение к UseCase/интерактору за форматированем
 	content := r.shortener.FormatShortURL(r.baseURL, alias)
+
 	render.JSON(w, req, ShortenResponse{
 		Result: content,
 	})
