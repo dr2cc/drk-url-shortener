@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
 	slogchi "github.com/samber/slog-chi"
 )
 
@@ -17,6 +18,8 @@ import (
 type Router struct {
 	shortener usecase.UseCase // interface вместо конкретной структуры
 	baseURL   string
+	// Валидатор для json . Пишут, что так меньше всего нагрузки
+	validator *validator.Validate
 	log       *slog.Logger
 }
 
@@ -26,6 +29,7 @@ func NewRouter(handler *chi.Mux, uc usecase.UseCase, cfg config.Config, log *slo
 	r := &Router{
 		shortener: uc,
 		baseURL:   cfg.BaseURL,
+		validator: validator.New(),
 		log:       log,
 	}
 

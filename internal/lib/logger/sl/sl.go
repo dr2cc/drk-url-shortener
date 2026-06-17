@@ -1,10 +1,12 @@
 package sl
 
 import (
+	"errors"
 	"log/slog"
 	"os"
 
 	"github.com/Marlliton/slogpretty"
+	"github.com/go-playground/validator/v10"
 )
 
 const (
@@ -33,7 +35,34 @@ func SetupLogger(env string) *slog.Logger {
 	return log
 }
 
+// // Простой хелпер
+// func Err(err error) slog.Attr {
+// 	return slog.Attr{
+// 		Key:   "error",
+// 		Value: slog.StringValue(err.Error()),
+// 	}
+// }
+
+// Хелпер с учетом валидации json
 func Err(err error) slog.Attr {
+	var valErrs validator.ValidationErrors
+
+	// Проверяем: если это ошибка валидации go-playground/validator
+	if errors.As(err, &valErrs) {
+		fields := make(map[string]string)
+		for _, e := range valErrs {
+			// Собираем карту: "URL": "required" или "URL": "url"
+			fields[e.Field()] = e.Tag()
+		}
+
+		// Возвращаем структурированный объект (мапу) вместо плоской строки
+		return slog.Attr{
+			Key:   "validation_errors",
+			Value: slog.AnyValue(fields),
+		}
+	}
+
+	// Для всех остальных ошибок (БД, JSON, сеть) оставляем "стандартное" поведение
 	return slog.Attr{
 		Key:   "error",
 		Value: slog.StringValue(err.Error()),
