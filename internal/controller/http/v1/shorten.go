@@ -29,7 +29,7 @@ type ShortenResponse struct {
 func (r Router) shortenJSON(w http.ResponseWriter, req *http.Request) {
 
 	var sr ShortenRequest
-
+	// Собственная функция добавляющая некоторые проверки и обработку ошибок.
 	err := httputil.ReadJSON(w, req, &sr)
 	if errors.Is(err, io.EOF) {
 		// Обработаем отдельно ошибку, если получили запрос с пустым телом.

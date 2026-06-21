@@ -25,7 +25,7 @@ func Test_router_redirect(t *testing.T) {
 	// В данном случае принимает объект (структуру) имитирующий UseCase interface и строку слага.
 
 	// В поведение передаем мок UseCase
-	type mockBehavior func(ucMock *mocks.MockUseCase, slug string)
+	type mockBehavior func(ucMock *mocks.MockUseCase)
 
 	tests := []struct {
 		name               string
@@ -39,13 +39,13 @@ func Test_router_redirect(t *testing.T) {
 			id:                 "abc",
 			expectedStatusCode: http.StatusTemporaryRedirect,
 			expectedBody:       "", // при редиректе тело обычно не проверяем
-			mockBehavior: func(ucMock *mocks.MockUseCase, slug string) {
+			mockBehavior: func(ucMock *mocks.MockUseCase) {
 				// «Когда роутер вызовет метод GetOriginal("abc"), ничего не ищи в БД, а сразу верни строку "https://google.com" и ошибку nil . Повтори один раз.».
 				// Метод EXPECT() есть у каждого сгенерированного мока.
 				// Он возвращает специальный объект-регистратор (recorder *MockUseCaseMockRecorder — указатель на "записывающий" объект).
 				// Задача этого объекта — записывать, какие методы должен вызвать ваш код во время теста.
 				ucMock.EXPECT(). // "При обращении к объекту ucMock мы будем ОЖИДАТЬ()"
-							GetOriginal(slug). // метод GetOriginal вызывается не у самого мока, а у регистратора, которого вернул нам s.EXPECT().
+							GetOriginal("abc"). // метод GetOriginal вызывается не у самого мока, а у регистратора, которого вернул нам s.EXPECT().
 					// Внутри сгенерированного кода этот метод создает структуру Call.
 					// Эта структура запоминает, какие аргументы (slug) ожидается получить.
 					// Метод возвращает эту самую структуру Call.
@@ -73,9 +73,9 @@ func Test_router_redirect(t *testing.T) {
 			expectedStatusCode: http.StatusBadRequest,
 			expectedBody:       "short link not found",
 			// «Когда роутер вызовет метод GetOriginal("abc"), притворись, что в БД ничего нет, и верни пустую строку и ошибку ErrCodeNotFound . Повтори один раз.».
-			mockBehavior: func(ucMock *mocks.MockUseCase, slug string) {
+			mockBehavior: func(ucMock *mocks.MockUseCase) {
 				ucMock.EXPECT().
-					GetOriginal(slug).
+					GetOriginal("abc").
 					Return("", usecase.ErrCodeNotFound).
 					Times(1)
 			},
@@ -85,9 +85,9 @@ func Test_router_redirect(t *testing.T) {
 			id:                 "abc",
 			expectedStatusCode: http.StatusBadRequest, // по ТЗ
 			expectedBody:       "internal server error",
-			mockBehavior: func(ucMock *mocks.MockUseCase, slug string) {
+			mockBehavior: func(ucMock *mocks.MockUseCase) {
 				ucMock.EXPECT().
-					GetOriginal(slug).
+					GetOriginal("abc").
 					Return("", errors.New("internal server error")). // Любая другая ошибка (например, упала БД)
 					Times(1)
 			},
@@ -102,7 +102,7 @@ func Test_router_redirect(t *testing.T) {
 			ucMock := mocks.NewMockUseCase(ctrl)
 
 			// Настраиваем поведение мока под конкретный тест-кейс
-			tt.mockBehavior(ucMock, tt.id)
+			tt.mockBehavior(ucMock)
 			// tt.mockBehavior должен принять параметры- ucMock *mocks.MockUseCase и slug
 			// Он принимает ucMock созданный выше и задает ему условия работы данного тест-кейса:
 			// ucMock.EXPECT().GetOriginal(tt.id).Return("https://google.com", nil).Times(1)
