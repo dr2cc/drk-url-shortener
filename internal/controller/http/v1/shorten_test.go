@@ -4,7 +4,6 @@ import (
 	"drk-url-shortener/internal/lib/testlog"
 	"drk-url-shortener/internal/usecase/mocks"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -26,18 +25,16 @@ func TestRouter_shortenJSON(t *testing.T) {
 
 	tests := []struct {
 		name               string
+		rawInputBody       string
 		expectedStatusCode int
 		expectedBody       string
-		url                string
-		isRawInput         bool   // Флаг: использовать ли "сырой" input вместо генерации через fmt.Sprintf
-		rawInput           string // Сам "сырой" текст для передачи битого JSON или пустоты
 		mockBehavior       func(ucMock *mocks.MockUseCase)
 	}{
 		{
 			name:               "OK",
+			rawInputBody:       `{"url": "https://google.com"}`,
 			expectedStatusCode: http.StatusCreated,
 			expectedBody:       `{"result": "http://localhost:8080/abc"}`,
-			url:                "https://google.com",
 			mockBehavior: func(ucMock *mocks.MockUseCase) {
 				// «Когда роутер вызовет метод Shorten("https://google.com"), ничего не пиши в БД,
 				// а сразу Верни строку "abc" и ошибку nil»
@@ -48,24 +45,33 @@ func TestRouter_shortenJSON(t *testing.T) {
 			},
 		},
 		{
-			name:               "Invalid JSON",
+			name:               "Empty Body",
+			rawInputBody:       "",
 			expectedStatusCode: http.StatusBadRequest,
-			expectedBody:       "failed to decode request body", // То, что возвращает ваш хендлер при ошибке десериализации
-			isRawInput:         true,
-			rawInput:           `{"url": "https://google.com"`, // Сломанный JSON (нет закрывающей скобки)
+			expectedBody:       `{"message":"request body is empty"}`,
 			mockBehavior:       func(ucMock *mocks.MockUseCase) {},
 		},
+		// Сломались,при переходе на Bind!
 		{
-			name:               "Empty Body",
+			name:               "Invalid JSON",
+			rawInputBody:       `{"url": "https://google.com"`, // Сломанный JSON (нет закрывающей скобки)
 			expectedStatusCode: http.StatusBadRequest,
+			expectedBody:       `{"message":"unexpected EOF"}`,
 			mockBehavior:       func(ucMock *mocks.MockUseCase) {},
 		},
 		{
 			name:               "Validation Error - Empty URL",
+			rawInputBody:       `{"url": ""}`,
 			expectedStatusCode: http.StatusBadRequest,
-			url:                "",
+			expectedBody:       `{"message":"url field is required"}`,
 			mockBehavior:       func(ucMock *mocks.MockUseCase) {},
 		},
+		// {
+		// 	name:               "DB Error",
+		// 	expectedStatusCode: http.StatusBadRequest,
+		// 	expectedBody:       `{"message":"failed to add url"}`,
+		// 	mockBehavior:       func(ucMock *mocks.MockUseCase) {},
+		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -100,24 +106,16 @@ func TestRouter_shortenJSON(t *testing.T) {
 
 			w := httptest.NewRecorder()
 
-			// Адаптивное формирование тела запроса
-			var input string
-			if tt.isRawInput {
-				input = tt.rawInput
-			} else {
-				input = fmt.Sprintf(`{"url": "%s"}`, tt.url)
-			}
-
 			// Передаем strings.NewReader напрямую. httptest сам обернет его в io.ReadCloser
 			// и корректно посчитает длину тела (ContentLength).
-			req := httptest.NewRequest(http.MethodPost, "/api/shorten", strings.NewReader(input))
+			req := httptest.NewRequest(http.MethodPost, "/api/shorten", strings.NewReader(tt.rawInputBody))
 
 			// Добавляем заголовок, чтобы обработчик понял, что это JSON
 			req.Header.Set("Content-Type", "application/json")
 
 			// // Выполнение действия (Act)
 			// r.ServeHTTP(w, req)
-			// Выполнение действия (Act) с красивым перехватом паники
+			// Выполнение действия (Act) с "красивым" перехватом паники
 			assert.NotPanics(t, func() {
 				r.ServeHTTP(w, req)
 			}, "The handler panicked! Check the initialization of dependencies.")
@@ -127,15 +125,15 @@ func TestRouter_shortenJSON(t *testing.T) {
 			// Тест прервется сразу же на этой строчке, если статус не совпадет
 			require.Equal(t, tt.expectedStatusCode, w.Code, "Invalid status code. Response: %s", w.Body.String())
 
-			if tt.name == "OK" {
-				// Для успешного кейса идеально подходит JSONEq (он проигнорирует пробелы и \n)
-				assert.JSONEq(t, tt.expectedBody, w.Body.String(), "The handler's response does not match the expected JSON template.")
-			} else {
-				// Для ошибок (Plain Text) используем assert.Contains.
-				// Он проверяет, что строка tt.expectedBody есть внутри ответа,
-				// и ему абсолютно плевать на автоматический перевод строки \n в конце!
-				assert.Contains(t, w.Body.String(), tt.expectedBody, "The error message in the response is incorrect.")
-			}
+			// if tt.name == "OK" {
+			// Для успешного кейса идеально подходит JSONEq (он проигнорирует пробелы и \n)
+			assert.JSONEq(t, tt.expectedBody, w.Body.String(), "The handler's response does not match the expected JSON template.")
+			// } else {
+			// 	// Для ошибок (Plain Text) используем assert.Contains.
+			// 	// Он проверяет, что строка tt.expectedBody есть внутри ответа,
+			// 	// и не "реагирует" на автоматический перевод строки \n в конце!
+			// 	assert.Contains(t, w.Body.String(), tt.expectedBody, "The error message in the response is incorrect.")
+			// }
 		})
 	}
 }

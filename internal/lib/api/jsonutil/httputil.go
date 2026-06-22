@@ -2,40 +2,50 @@ package httputil
 
 import (
 	"drk-url-shortener/internal/lib/logger/sl"
-	"encoding/json"
 	"log/slog"
 	"net/http"
+
+	"github.com/go-chi/render"
 )
 
-// ReadJSON читает тело запроса и декодирует его в структуру.
-// Также она автоматически закрывает тело запроса.
-func ReadJSON(w http.ResponseWriter, r *http.Request, data interface{}) error {
-	defer r.Body.Close()
-
-	// Ограничиваем размер тела (например, до 1 МБ) для защиты от DoS-атак
-	r.Body = http.MaxBytesReader(w, r.Body, 1048576)
-
-	dec := json.NewDecoder(r.Body)
-	// Опционально: выдавать ошибку, если клиент прислал неизвестные поля
-	dec.DisallowUnknownFields()
-
-	return dec.Decode(data)
+type errorResponse struct {
+	Message string `json:"message"`
 }
 
-// WriteJSON сериализует данные в JSON и отправляет их клиенту с указанным HTTP-статусом.
-func WriteJSON(w http.ResponseWriter, status int, data interface{}) error {
-	// Устанавливаем заголовок, что сервер возвращает JSON
-	w.Header().Set("Content-Type", "application/json")
-
-	// Устанавливаем HTTP-статус
-	w.WriteHeader(status)
-
-	// Записываем JSON напрямую в сетевой поток ответа
-	return json.NewEncoder(w).Encode(data)
+type statusResponse struct {
+	Status string `json:"status"`
 }
 
-// HTTPError логирует ошибку через sl.Err и отправляет plain-text ответ клиенту.
-func HTTPError(log *slog.Logger, w http.ResponseWriter, msg string, status int, err error) {
+// WriteJSONError логирует ошибку через slog, отправляет JSON и возвращает true
+func WriteJSONError(w http.ResponseWriter, r *http.Request, statusCode int, message string) bool {
+	// Использование структурированного логирования slog
+	slog.Error(message,
+		slog.Int("status", statusCode),
+		slog.String("path", r.URL.Path),
+	)
+
+	render.Status(r, statusCode)
+	render.JSON(w, r, errorResponse{Message: message})
+
+	return true
+}
+
+// WriteTextError логирует ошибку через slog, отправляет plain-text ответ клиенту и возвращает true.
+func WriteTextError(log *slog.Logger, w http.ResponseWriter, r *http.Request, msg string, status int, err error) bool {
+	// 1. Логируем ошибку через slog
 	log.Error(msg, sl.Err(err))
+
+	// 2. Оповещаем chi/render о статус-коде (важно для middleware-логгеров chi)
+	render.Status(r, status)
+
+	// 3. Отправляем plain-text через стандартный метод
 	http.Error(w, msg, status)
+
+	return true
+}
+
+// JSON — хелпер для отправки успешных ответов
+func JSON(w http.ResponseWriter, r *http.Request, statusCode int, v interface{}) {
+	render.Status(r, statusCode)
+	render.JSON(w, r, v)
 }

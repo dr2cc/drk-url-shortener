@@ -8,6 +8,7 @@ require (
 )
 
 require (
+	github.com/ajg/form v1.5.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
@@ -24,6 +25,7 @@ require (
 
 require (
 	github.com/Marlliton/slogpretty v0.1.3
+	github.com/go-chi/render v1.0.3
 	github.com/go-playground/assert/v2 v2.2.0
 	github.com/go-playground/validator/v10 v10.30.3
 	github.com/samber/slog-chi v1.19.1
