@@ -66,12 +66,15 @@ func TestRouter_shortenJSON(t *testing.T) {
 			expectedBody:       `{"message":"url field is required"}`,
 			mockBehavior:       func(ucMock *mocks.MockUseCase) {},
 		},
-		// {
-		// 	name:               "DB Error",
-		// 	expectedStatusCode: http.StatusBadRequest,
-		// 	expectedBody:       `{"message":"failed to add url"}`,
-		// 	mockBehavior:       func(ucMock *mocks.MockUseCase) {},
-		// },
+		{
+			name:               "DB Error",
+			rawInputBody:       `{"url": "https://google.com"}`,
+			expectedStatusCode: http.StatusBadRequest,
+			expectedBody:       `{"message":"failed to add url"}`,
+			mockBehavior: func(ucMock *mocks.MockUseCase) {
+				ucMock.EXPECT().Shorten("https://google.com").Return("", errors.New("internal server error"))
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -189,7 +192,7 @@ func TestRouter_shortenText(t *testing.T) {
 			mockBehavior:       func(ucMock *mocks.MockUseCase) {}, // Хендлер отбракует запрос до UseCase
 		},
 		{
-			name:               "SaveURL Error",
+			name:               "DB Error",
 			expectedStatusCode: http.StatusBadRequest,
 			expectedBody:       "failed to add url\n", // http.Error добавляет \n
 			body:               io.NopCloser(strings.NewReader("https://google.com")),
