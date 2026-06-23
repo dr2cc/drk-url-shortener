@@ -1,12 +1,14 @@
 package v1
 
 import (
+	"compress/flate"
 	"drk-url-shortener/internal/config"
+	mw "drk-url-shortener/internal/controller/http/middleware"
 	"drk-url-shortener/internal/usecase"
 	"log/slog"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-playground/validator/v10"
+	"github.com/go-chi/chi/v5/middleware"
 	slogchi "github.com/samber/slog-chi"
 )
 
@@ -18,8 +20,6 @@ import (
 type Router struct {
 	shortener usecase.UseCase // interface вместо конкретной структуры
 	baseURL   string
-	// Валидатор для json . Пишут, что так меньше всего нагрузки
-	validator *validator.Validate
 	log       *slog.Logger
 }
 
@@ -29,22 +29,20 @@ func NewRouter(handler *chi.Mux, uc usecase.UseCase, cfg config.Config, log *slo
 	r := &Router{
 		shortener: uc,
 		baseURL:   cfg.BaseURL,
-		validator: validator.New(),
 		log:       log,
 	}
 
 	// Настраиваем middleware
 	handler.Use(slogchi.New(log))
+	// Распаковываем входящий Gzip (если пришел gzip, он распаковывается и подменяет r.Body)
+	handler.Use(mw.DecompressRequest)
+	// Если клиент хочет сжатый ответ, запись в w перехватывается и сжимается (gzip)
+	handler.Use(middleware.Compress(flate.BestSpeed))
 
 	// Привязываем эндпоинты напрямую к корню (а не через v1), как требует ТЗ
 	handler.Post("/", r.shortenText)
 	handler.Get("/{id}", r.redirect)
 	handler.Post("/api/shorten", r.shortenJSON)
 
-	// // Если нужно группировать маршруты, то выглядит примерно так:
-	// handler.Route("/v1", func(chiRouter chi.Router) {
-	// 	chiRouter.Post("/", r.shortenText)
-	// 	chiRouter.Get("/{id}", r.redirect)
-	// })
 	return handler
 }

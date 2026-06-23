@@ -13,7 +13,6 @@ import (
 	"testing/iotest"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -51,7 +50,6 @@ func TestRouter_shortenJSON(t *testing.T) {
 			expectedBody:       `{"message":"request body is empty"}`,
 			mockBehavior:       func(ucMock *mocks.MockUseCase) {},
 		},
-		// Сломались,при переходе на Bind!
 		{
 			name:               "Invalid JSON",
 			rawInputBody:       `{"url": "https://google.com"`, // Сломанный JSON (нет закрывающей скобки)
@@ -98,7 +96,6 @@ func TestRouter_shortenJSON(t *testing.T) {
 			sut := &Router{
 				shortener: ucMock,
 				baseURL:   baseURL,
-				validator: validator.New(),
 				log:       log,
 			}
 
@@ -128,15 +125,8 @@ func TestRouter_shortenJSON(t *testing.T) {
 			// Тест прервется сразу же на этой строчке, если статус не совпадет
 			require.Equal(t, tt.expectedStatusCode, w.Code, "Invalid status code. Response: %s", w.Body.String())
 
-			// if tt.name == "OK" {
 			// Для успешного кейса идеально подходит JSONEq (он проигнорирует пробелы и \n)
 			assert.JSONEq(t, tt.expectedBody, w.Body.String(), "The handler's response does not match the expected JSON template.")
-			// } else {
-			// 	// Для ошибок (Plain Text) используем assert.Contains.
-			// 	// Он проверяет, что строка tt.expectedBody есть внутри ответа,
-			// 	// и не "реагирует" на автоматический перевод строки \n в конце!
-			// 	assert.Contains(t, w.Body.String(), tt.expectedBody, "The error message in the response is incorrect.")
-			// }
 		})
 	}
 }
@@ -151,9 +141,6 @@ func TestRouter_shortenText(t *testing.T) {
 	// mockBehavior (имитация поведения), тип-функция (function type), настройщик поведения мока.
 	// Это callback-функция (так как эта логика передается внутрь теста, чтобы сработать в нужный момент), инъекция поведения.
 	// В данном случае принимает объект (структуру) имитирующий UseCase interface и ...
-
-	// // В поведение передаем мок UseCase
-	// type mockBehavior func(ucMock *mocks.MockUseCase)
 
 	tests := []struct {
 		name               string

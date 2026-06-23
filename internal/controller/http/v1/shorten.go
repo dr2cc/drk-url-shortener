@@ -40,7 +40,7 @@ func (sr *ShortenRequest) Bind(r *http.Request) error {
 		return errors.New("invalid url format")
 	}
 
-	return nil // Все отлично, ошибок нет
+	return nil // ошибок нет
 }
 
 type ShortenResponse struct {
@@ -50,7 +50,7 @@ type ShortenResponse struct {
 // --- 2. ХЕНДЛЕРЫ ---
 
 // // Пакетный JSON
-// func (r Router) shortenBatchHandler(w http.ResponseWriter, req *http.Request) {}
+// func (r Router) shortenBatch(w http.ResponseWriter, req *http.Request) {}
 
 // Одиночный JSON
 func (r Router) shortenJSON(w http.ResponseWriter, req *http.Request) {
@@ -63,16 +63,20 @@ func (r Router) shortenJSON(w http.ResponseWriter, req *http.Request) {
 
 	if err := decoder.Decode(&sr); err != nil {
 		if errors.Is(err, io.EOF) {
-			httputil.WriteJSONError(w, req, http.StatusBadRequest, "request body is empty")
+			httputil.WriteJSONError(w, req, http.StatusBadRequest, "request body is empty") // пустое тело
 			return
 		}
-		// unexpected EOF тут для совместимости с подходом на чистом Bind
+		// "unexpected EOF" тут для совместимости с подходом на чистом Bind.
+		// Но в целом логично: "понятный" EOF - пустое тело, остальное "unexpected EOF"
 		httputil.WriteJSONError(w, req, http.StatusBadRequest, "unexpected EOF")
 		return
 	}
 
-	// 2. Вручную вызываем наш метод валидации и очистки
+	// 2. "Вручную" вызываем метод валидации и очистки.
 	if err := sr.Bind(req); err != nil {
+		// Если JSON «битый» или не прошел валидацию в методе Bind (вернул ошибку)
+		// err.Error() будет содержать то, что написано в unc (sr *ShortenRequest) Bind(r *http.Request) error{}
+		// "url field is required" или "invalid url format"
 		httputil.WriteJSONError(w, req, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -86,7 +90,6 @@ func (r Router) shortenJSON(w http.ResponseWriter, req *http.Request) {
 	// 		httputil.WriteJSONError(w, req, http.StatusBadRequest, "request body is empty")
 	// 		return
 	// 	}
-
 	// 	// Если JSON «битый» или не прошел валидацию в методе Bind (вернул ошибку)
 	// 	// err.Error() будет содержать то, что мы написали: "url field is required" или "invalid url format"
 	// 	httputil.WriteJSONError(w, req, http.StatusBadRequest, err.Error())
