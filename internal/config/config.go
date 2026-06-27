@@ -20,7 +20,7 @@ func New() (Config, error) {
 	// Разбираем флаги в конфигурацию
 	flag.StringVar(&cfg.ServAddres, "a", ":8080", "HTTP server startup address")
 	flag.StringVar(&cfg.BaseURL, "b", "http://localhost:8080", "base URL")
-	flag.StringVar(&cfg.CacheDumpPath, "f", "", "path to dump with addresses")
+	flag.StringVar(&cfg.CacheDumpPath, "f", "./short-url-db.json", "path to dump with addresses")
 	flag.Parse()
 
 	// // Удобная система, но не соответствует заданию yp.

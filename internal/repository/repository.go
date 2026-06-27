@@ -66,8 +66,8 @@ import "drk-url-shortener/internal/usecase"
 // которая берет конкретную структуру у производителя и упаковывает её в интерфейс, необходимый для потребителя (UseCase).
 
 // Паттерн «Фабрика» (Factory).
-func New() usecase.Repository {
+func New(cacheDumpPath string) (usecase.Repository, error) {
 	// Логика выбора хранилища.
 	// Пока только map
-	return newCache()
+	return newCache(cacheDumpPath)
 }

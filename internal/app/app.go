@@ -38,7 +38,12 @@ func Run(cfg config.Config) error {
 
 	// Выбор между именованным полем структуры и неименованным (встраиванием/embedding)  https://share.google/aimode/ixhlMNK4DoCFiNBij
 	// Using the Factory Pattern
-	repos := repository.New()
+	repos, err := repository.New(cfg.CacheDumpPath)
+	if err != nil {
+		// log.Fatal(fmt.Errorf("app - Run - postgres.New: %w", err))
+		log.Error("app - Run - repository.New:", "err", err)
+		return err
+	}
 	// ⬇ Сервисам нужно то, что делает репозиторий (сохранение и нахождение).
 	shortenerUseCase := usecase.New(repos, generator)
 	// ⬇ Хендлерам нужно то, что делает сервис (форматирование, работа по сокращению, работа по получению).
@@ -49,7 +54,7 @@ func Run(cfg config.Config) error {
 	// Все сетевые запросы, походы в базу данных и логирование начнут использовать r.Context().
 	// Это необходимо для graceful shutdown и для отмены долгих операций, если клиент разорвал соединение.
 	log.Info("server is starting", "port", cfg.ServAddres)
-	err := http.ListenAndServe(cfg.ServAddres, handlers)
+	err = http.ListenAndServe(cfg.ServAddres, handlers)
 	if err != nil {
 		log.Error("start error:", "err", err)
 		return err
