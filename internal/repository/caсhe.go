@@ -8,10 +8,10 @@ type Cache struct {
 	db map[string]string
 }
 
-func newCache() Cache {
+func newCache() *Cache {
 	// «Accept interfaces, 🔙return structs».
 	// Возвращаем структуру (Cache), реализующую интерфейс usecase.Repository
-	return Cache{
+	return &Cache{
 		db: make(map[string]string),
 	}
 }

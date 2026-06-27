@@ -42,7 +42,7 @@ func Run(cfg config.Config) error {
 	// ⬇ Сервисам нужно то, что делает репозиторий (сохранение и нахождение).
 	shortenerUseCase := usecase.New(repos, generator)
 	// ⬇ Хендлерам нужно то, что делает сервис (форматирование, работа по сокращению, работа по получению).
-	handlers := v1.NewRouter(mux, shortenerUseCase, cfg, log)
+	handlers := v1.NewRouter(mux, shortenerUseCase, cfg.BaseURL, log)
 
 	// 📍(сюда вернуться) Stabilization Stage (Production-Ready MVP)
 	// 5️⃣ Полноценная обработка контекста (context.Context)

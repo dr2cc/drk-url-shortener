@@ -9,9 +9,10 @@ import (
 
 type Config struct {
 	// Когда проект работает на реальном сервере (в продакшене) `env:"ENV" envDefault:"prod"`
-	Env        string `env:"ENV" envDefault:"local"`
-	ServAddres string `env:"SERVER_ADDRESS"`
-	BaseURL    string `env:"BASE_URL"`
+	Env           string `env:"ENV" envDefault:"local"`
+	ServAddres    string `env:"SERVER_ADDRESS"`
+	BaseURL       string `env:"BASE_URL"`
+	CacheDumpPath string `env:"FILE_STORAGE_PATH"`
 }
 
 func New() (Config, error) {
@@ -19,6 +20,7 @@ func New() (Config, error) {
 	// Разбираем флаги в конфигурацию
 	flag.StringVar(&cfg.ServAddres, "a", ":8080", "HTTP server startup address")
 	flag.StringVar(&cfg.BaseURL, "b", "http://localhost:8080", "base URL")
+	flag.StringVar(&cfg.CacheDumpPath, "f", "", "path to dump with addresses")
 	flag.Parse()
 
 	// // Удобная система, но не соответствует заданию yp.

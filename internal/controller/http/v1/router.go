@@ -2,7 +2,6 @@ package v1
 
 import (
 	"compress/flate"
-	"drk-url-shortener/internal/config"
 	mw "drk-url-shortener/internal/controller/http/middleware"
 	"drk-url-shortener/internal/usecase"
 	"log/slog"
@@ -24,11 +23,11 @@ type Router struct {
 }
 
 // Принимай интерфейсы (usecase.UseCase), возвращай структуры (*chi.Mux)
-func NewRouter(handler *chi.Mux, uc usecase.UseCase, cfg config.Config, log *slog.Logger) *chi.Mux {
+func NewRouter(handler *chi.Mux, uc usecase.UseCase, baseURL string, log *slog.Logger) *chi.Mux {
 	// Инициализируем нашу внутреннюю структуру с зависимостями
 	r := &Router{
 		shortener: uc,
-		baseURL:   cfg.BaseURL,
+		baseURL:   baseURL,
 		log:       log,
 	}
 
