@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-// Event описывает формат строки в JSON-файле
+// Event (событие) описывает формат строки в JSON-файле
 type Event struct {
 	UUID        string `json:"uuid"`
 	ShortURL    string `json:"short_url"`
@@ -18,9 +18,11 @@ type Event struct {
 }
 
 type Cache struct {
-	// Мапы в Go не потокобезопасны при конкурентной записи. Добавим sync.RWMutex
-	mu       sync.RWMutex
-	db       map[string]string
+	// Мьютекс (простейшее взаимное исключение, семафор со счетчиком, равным 1)
+	// добавлять обязательно в структуру описывающую хранение данных в мапе!
+	mu sync.RWMutex // Read-Write Mutex разделяет права на чтение и запись, что оптимальнее sync.Mutex
+	db map[string]string
+	// Новое к iter9
 	filePath string
 	nextUUID int
 }
@@ -44,9 +46,6 @@ func newCache(filePath string) (*Cache, error) {
 	// «Accept interfaces, 🔙return structs».
 	// Возвращаем структуру (Cache), реализующую интерфейс usecase.Repository
 	return c, nil
-	// return &Cache{
-	// 	db: make(map[string]string),
-	// }, nil
 }
 
 // Внутренний метод восстановления данных из файла в map
@@ -77,8 +76,10 @@ func (c *Cache) loadFromFile() error {
 }
 
 func (c *Cache) Save(alias string, url string) error {
+	// Запись, в этот момент полностью блокируем остальным горутинам (пытающимся его захватить=использующим этот мьютекс) и запись и чтение.
 	c.mu.Lock()
-	defer c.mu.Unlock()
+	defer c.mu.Unlock() // Если забыть снять блокировку по окончании работы функции, программа намертво зависнет (Deadlock),
+	// как только любая другая горутина попытается обратиться "за этим" мьютексом.
 
 	// Если файл используется, пишем сначала туда (Write-Through логика)
 	if c.filePath != "" {
@@ -105,7 +106,8 @@ func (c *Cache) Save(alias string, url string) error {
 	return nil
 }
 func (c *Cache) Get(alias string) (string, error) {
-	// С появлением сохранения в файл добавляется только это
+	// Чтение , в этот момент можно разрешить другим горутинам одновременно читать данные.
+	// Чтение блокируется только в том случае, если кто-то пишет.
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
