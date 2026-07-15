@@ -10,7 +10,8 @@ import (
 	"sync"
 )
 
-// Event (событие) описывает формат строки в JSON-файле
+// Event (событие)- структура хранения данных в файле с адресами.
+// Почему UUID строка? Это по заданию или так надо?
 type Event struct {
 	UUID        string `json:"uuid"`
 	ShortURL    string `json:"short_url"`
@@ -48,30 +49,39 @@ func newCache(filePath string) (*Cache, error) {
 	return c, nil
 }
 
+// Проверить у джеминая комментарии к этой функции (07.07.26)
 // Внутренний метод восстановления данных из файла в map
 func (c *Cache) loadFromFile() error {
 	file, err := os.OpenFile(c.filePath, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
 		return err
 	}
+	// По окончании чтения из файла- закрываем его.
 	defer file.Close()
 
+	// Что такое сканер не знаю, но это тип данных в который читается (ридер?) файл с адресами.
 	scanner := bufio.NewScanner(file)
+	// Читаем файл:
 	for scanner.Scan() {
 		var event Event
+		// Заполняем event данными из файла:
 		if err := json.Unmarshal(scanner.Bytes(), &event); err != nil {
 			return err
 		}
 
-		// Заполняем кэш
+		// Восстанавливаем кэш
 		c.db[event.ShortURL] = event.OriginalURL
 
-		// Вычисляем следующий UUID, чтобы продолжить нумерацию
+		// Вычисляем следующий UUID, чтобы продолжить нумерацию.
+		// Переменная id получается из event.UUID; ЕСЛИ ошибки нет и id БОЛЬШЕ или РАВЕН nextUUID ТО
+		// присваиваем nextUUID значение id+1
+		// Т.к. nextUUID уже изначально равен 1, то при последней итерации он станет больше id и цикл прервется.
 		if id, err := strconv.Atoi(event.UUID); err == nil && id >= c.nextUUID {
 			c.nextUUID = id + 1
 		}
 	}
-
+	// Получается при правильном чтении из файла возвращаем эту ошибку.
+	// Уточнить почему?
 	return scanner.Err()
 }
 
@@ -81,8 +91,9 @@ func (c *Cache) Save(alias string, url string) error {
 	defer c.mu.Unlock() // Если забыть снять блокировку по окончании работы функции, программа намертво зависнет (Deadlock),
 	// как только любая другая горутина попытается обратиться "за этим" мьютексом.
 
-	// Если файл используется, пишем сначала туда (Write-Through логика)
+	// Если файл используется, пишем сначала туда (Write-Throug логика)
 	if c.filePath != "" {
+		// Продолжить тут-
 		file, err := os.OpenFile(c.filePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			return err
