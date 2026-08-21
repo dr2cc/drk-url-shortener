@@ -8,7 +8,9 @@ import (
 )
 
 type Config struct {
-	// Когда проект работает на реальном сервере (в продакшене) `env:"ENV" envDefault:"prod"`
+	// ENV=local используется для разработки на компьютере.
+	// На реальном сервере значение "local" перезапишется реальным значением переменной ENV (например, "prod").
+	// Точно также его использует логгер- от максимално разверноутого лога при разработке, до строго json на сервере
 	Env           string `env:"ENV" envDefault:"local"`
 	ServAddres    string `env:"SERVER_ADDRESS"`
 	BaseURL       string `env:"BASE_URL"`
