@@ -21,9 +21,12 @@ func Run(cfg config.Config) error {
 	// Еще следует добавить:
 	// Трейсинг: Внедрение OpenTelemetry (Jaeger) для отслеживания пути запроса, особенно когда проект начнет ходить в базу данных.
 	// Метрики (в yp это отдельный трек): Интеграция с Prometheus для отслеживания количества запросов (RPS), времени ответа (latency) и количества ошибок 4xx / 5xx.
-	log := sl.SetupLogger(cfg.Env)
-	slog.SetDefault(log)
-	log.Info("starting application", slog.String("env", cfg.Env))
+	logger := sl.SetupLogger(cfg.Env)
+	// Главное назначение slog.SetDefault(logger) это переключение на работу в режиме нового slog во всем приложении (даже при использовании log.).
+	// Без него, если использовать slog. или log. то будет выводиться текст (старый log).
+	// Или придется всюду передавать переменную logger
+	slog.SetDefault(logger)
+	slog.Info("starting application", slog.String("env", cfg.Env))
 
 	// 📍(сюда вернуться) Stabilization Stage (Production-Ready MVP)
 	// 3️⃣ Инфраструктурный слой- db
@@ -41,23 +44,23 @@ func Run(cfg config.Config) error {
 	repos, err := repository.New(cfg.CacheDumpPath)
 	if err != nil {
 		// log.Fatal(fmt.Errorf("app - Run - postgres.New: %w", err))
-		log.Error("app - Run - repository.New:", "err", err)
+		slog.Error("app - Run - repository.New:", "err", err)
 		return err
 	}
 	// ⬇ Сервисам нужно то, что делает репозиторий (сохранение и нахождение).
 	shortenerUseCase := usecase.New(repos, generator)
 	// ⬇ Хендлерам нужно то, что делает сервис (форматирование, работа по сокращению, работа по получению).
-	handlers := v1.NewRouter(mux, shortenerUseCase, cfg.BaseURL, log)
+	handlers := v1.NewRouter(mux, shortenerUseCase, cfg.BaseURL, logger)
 
 	// 📍(сюда вернуться) Stabilization Stage (Production-Ready MVP)
 	// 5️⃣ Полноценная обработка контекста. Должны начать использовать контекст:
 	// 1. Сетевые запросы;
 	// 2. "Походы" в базу данных.
 	// Это необходимо для graceful shutdown и для отмены долгих операций, если клиент разорвал соединение.
-	log.Info("server is starting", "port", cfg.ServAddres)
+	slog.Info("server is starting", "port", cfg.ServAddres)
 	err = http.ListenAndServe(cfg.ServAddres, handlers)
 	if err != nil {
-		log.Error("start error:", "err", err)
+		slog.Error("start error:", "err", err)
 		return err
 	}
 	return nil
