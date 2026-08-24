@@ -50,8 +50,9 @@ func Run(cfg config.Config) error {
 	handlers := v1.NewRouter(mux, shortenerUseCase, cfg.BaseURL, log)
 
 	// 📍(сюда вернуться) Stabilization Stage (Production-Ready MVP)
-	// 5️⃣ Полноценная обработка контекста (context.Context)
-	// Все сетевые запросы, походы в базу данных и логирование начнут использовать r.Context().
+	// 5️⃣ Полноценная обработка контекста. Должны начать использовать контекст:
+	// 1. Сетевые запросы;
+	// 2. "Походы" в базу данных.
 	// Это необходимо для graceful shutdown и для отмены долгих операций, если клиент разорвал соединение.
 	log.Info("server is starting", "port", cfg.ServAddres)
 	err = http.ListenAndServe(cfg.ServAddres, handlers)

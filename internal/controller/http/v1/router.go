@@ -39,6 +39,10 @@ func NewRouter(handler *chi.Mux, uc usecase.UseCase, baseURL string, log *slog.L
 	handler.Use(middleware.Compress(flate.BestSpeed))
 
 	// Привязываем эндпоинты напрямую к корню (а не через v1), как требует ТЗ
+	// 5️⃣ 📍(добавить) Полноценная обработка контекста. Должны начать использовать контекст:
+	// 1. Сетевые запросы;
+	// 2. "Походы" в базу данных.
+	// Здесь это необходимо для отмены долгих операций, если клиент разорвал соединение.
 	handler.Post("/", r.shortenText)
 	handler.Get("/{id}", r.redirect)
 	handler.Post("/api/shorten", r.shortenJSON)
