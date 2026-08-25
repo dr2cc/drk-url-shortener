@@ -122,7 +122,8 @@ func (r Router) shortenJSON(w http.ResponseWriter, req *http.Request) {
 	httputil.JSON(w, req, http.StatusCreated, response)
 }
 
-// Текстовый хендлер
+// Текстовый хендлер.
+// ♊Цепочка - 17.06.26 "GO десиарилизация. В проекте я использовал"
 func (r Router) shortenText(w http.ResponseWriter, req *http.Request) {
 	// // Эта проверка внутри хендлера вредна, и её нужно удалить по двум причинам:
 	// // - Нарушение ответственности (SRP): Фильтрация методов — это задача роутера, а не бизнес-логики хендлера.
