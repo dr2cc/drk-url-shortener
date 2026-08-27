@@ -54,6 +54,7 @@ type ShortenResponse struct {
 
 // Одиночный JSON
 func (r Router) shortenJSON(w http.ResponseWriter, req *http.Request) {
+	defer req.Body.Close() // Гарантированная защита от утечек
 
 	var sr ShortenRequest
 
@@ -63,12 +64,15 @@ func (r Router) shortenJSON(w http.ResponseWriter, req *http.Request) {
 
 	if err := decoder.Decode(&sr); err != nil {
 		if errors.Is(err, io.EOF) {
-			httputil.WriteJSONError(w, req, http.StatusBadRequest, "request body is empty") // пустое тело
+			// ТЕПЕРЬ передаем r.log явным образом
+			httputil.WriteJSONError(r.log, w, req, http.StatusBadRequest, "request body is empty")
 			return
 		}
 		// "unexpected EOF" тут для совместимости с подходом на чистом Bind.
 		// Но в целом логично: "понятный" EOF - пустое тело, остальное "unexpected EOF"
-		httputil.WriteJSONError(w, req, http.StatusBadRequest, "unexpected EOF")
+		httputil.WriteJSONError(r.log, w, req, http.StatusBadRequest, "unexpected EOF")
+		// // Комментарий про "unexpected EOF" был про эту строку
+		// httputil.WriteJSONError(w, req, http.StatusBadRequest, "unexpected EOF")
 		return
 	}
 
@@ -77,38 +81,21 @@ func (r Router) shortenJSON(w http.ResponseWriter, req *http.Request) {
 		// Если JSON «битый» или не прошел валидацию в методе Bind (вернул ошибку)
 		// err.Error() будет содержать то, что написано в unc (sr *ShortenRequest) Bind(r *http.Request) error{}
 		// "url field is required" или "invalid url format"
-		httputil.WriteJSONError(w, req, http.StatusBadRequest, err.Error())
+		httputil.WriteJSONError(r.log, w, req, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	// // ВЕСЬ код выше (после объявления переменной можно удалить, но...
-	// // "Чистый" переход не удался из-за автотестов Яндекса! Он не видит библиотеки дкодирования JSON.
-	// // Переходим на Bind. render.Bind сам декодирует JSON и вызовет метод sr.Bind()
-	// if err := render.Bind(req, &sr); err != nil {
-	// 	// Если запрос пустой
-	// 	if errors.Is(err, io.EOF) {
-	// 		httputil.WriteJSONError(w, req, http.StatusBadRequest, "request body is empty")
-	// 		return
-	// 	}
-	// 	// Если JSON «битый» или не прошел валидацию в методе Bind (вернул ошибку)
-	// 	// err.Error() будет содержать то, что мы написали: "url field is required" или "invalid url format"
-	// 	httputil.WriteJSONError(w, req, http.StatusBadRequest, err.Error())
-	// 	return
-	// }
+	// "Чистый" переход на Bind не удался из-за автотестов Яндекса! Он не видит библиотеки дкодирования JSON.
 
 	r.log.Info("request body decoded and validated", slog.Any("request", sr))
 
 	// 3. Вызов бизнес-логики (UseCase)
 	alias, err := r.shortener.Shorten(sr.URL)
 	if err != nil {
-		// Будущая проверка: если URL уже есть, возвращаем 409 Conflict
-		// if errors.Is(err, domain.ErrURLExists) {
-		//     if httputil.WriteJSONError(w, req, http.StatusConflict, "url already exists") { return }
-		// }
+		// Будущая проверка: если URL уже есть, возвращаем 409 Conflict (?)
 
-		if httputil.WriteJSONError(w, req, http.StatusBadRequest, "failed to add url") {
-			return
-		}
+		httputil.WriteJSONError(r.log, w, req, http.StatusBadRequest, "failed to add url")
+		return // явный return
 	}
 
 	r.log.Info("url added", slog.String("id", alias))
@@ -123,36 +110,26 @@ func (r Router) shortenJSON(w http.ResponseWriter, req *http.Request) {
 }
 
 // Текстовый хендлер.
-// ♊Цепочка - 17.06.26 "GO десиарилизация. В проекте я использовал"
 func (r Router) shortenText(w http.ResponseWriter, req *http.Request) {
-	// // Эта проверка внутри хендлера вредна, и её нужно удалить по двум причинам:
-	// // - Нарушение ответственности (SRP): Фильтрация методов — это задача роутера, а не бизнес-логики хендлера.
-	// // - Мертвый код (Dead Code): Из-за того, что роутер handler.Post уже фильтрует трафик,
-	// // условие if req.Method != http.MethodPost никогда не выполнится.
-	// if req.Method != http.MethodPost {
-	// 	http.Error(w, "The sage only accepts POST requests!", http.StatusBadRequest)
-	// 	return
-	// }
-
-	// // Используем "слугу" io.LimitReader, чтобы подстраховаться.
-	// // СМЫСЛ понимаю, но не реализацию (особенно в тесте). Пока не делаю..
-	// limitReader := io.LimitReader(req.Body, 2048)
+	defer req.Body.Close() // // Обязательно закрываем за посетителем (Body) дверь, но в самом верху!
+	// Теперь при любой ошибке мы не передадим пустой или битый body в бизнес-логику!
 
 	// 1. Читаем (тело) из того, что "можно читать" (Reader)
 	body, err := io.ReadAll(req.Body) // (limitReader)
 	if err != nil {
 		// scroll- свиток!
-		if httputil.WriteTextError(r.log, w, req, "scroll reading error", http.StatusBadRequest, err) {
-			return
-		}
+		httputil.WriteTextError(r.log, w, req, "scroll reading error", http.StatusBadRequest, err)
+		return // Чистый выход
 	}
 	defer req.Body.Close() // Обязательно закрываем за посетителем дверь
 
 	// 2. Проверяем содержимое (валидация)
 	if len(body) == 0 {
 		// Если свиток пуст — это Bad Request (ошибочный поиск)
-		// Не можем применить HTTPError() - здесь не формируем ошибку!
-		http.Error(w, "URL not found in request body", http.StatusBadRequest)
+		// Вместо "сырого" http.Error используем хелпер, чтобы эта ошибка ТОЖЕ записалась в лог приложения!
+		httputil.WriteTextError(r.log, w, req, "URL not found in request body", http.StatusBadRequest, errors.New("empty body"))
+		// // Не можем применить HTTPError() - здесь не формируем ошибку!
+		// http.Error(w, "URL not found in request body", http.StatusBadRequest)
 		return
 	}
 
@@ -161,9 +138,8 @@ func (r Router) shortenText(w http.ResponseWriter, req *http.Request) {
 	// 3. Обращение к UseCase/интерактору за алиасом (usecase и записывает его в db)
 	alias, err := r.shortener.Shorten(string(body))
 	if err != nil {
-		if httputil.WriteTextError(r.log, w, req, "failed to add url", http.StatusBadRequest, err) {
-			return
-		}
+		httputil.WriteTextError(r.log, w, req, "failed to add url", http.StatusBadRequest, err)
+		return
 	}
 
 	// 4. Формируем "Ответ-Обещание" (Response)
